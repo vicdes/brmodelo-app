@@ -6,6 +6,7 @@ import { DropdownOption } from "../../components/DropdownIcon";
 import Feedback from "../../components/Feedback";
 import { Model } from "../../services/types/model";
 import loadingDots from "../../../img/loading-dots.gif";
+import PolyglotIcon from "@components/Icons/PolyglotIcon";
 
 interface WorkspacePageProps {
 	models: Model[];
@@ -112,10 +113,14 @@ const WorkspacePage: React.FC<WorkspacePageProps> = React.memo(({
 											{model.type === 'nosql' && (
 												<NoSqlIcon className="modelType" />
 											)}
+											{model.type === 'polyglot' && (
+												<PolyglotIcon className="modelType" />
+											)}
 											<span>{
 												model.type === 'conceptual' ? t('Conceptual') :
 												model.type === 'logic' ? t('Logical') :
 												model.type === 'nosql' ? t('NoSQL') :
+												model.type === 'polyglot' ? t('Polyglot Persistence') :
 												model.type
 											}</span>
 										</td>

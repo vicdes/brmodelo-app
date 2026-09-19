@@ -6,6 +6,7 @@ const titleFor = (pathname: string): string => {
 	if (pathname.startsWith("/conceptual/")) return "Conceptual model - BRMW";
 	if (pathname.startsWith("/logic/")) return "Logic model - BRMW";
 	if (pathname.startsWith("/nosql/")) return "NoSQL model - BRMW";
+	if (pathname.startsWith("/polyglot/")) return "Polyglot Persistence model - BRMW";
 	return "BRMW";
 };
 

@@ -15,6 +15,7 @@ const TYPE_OPTIONS: ModelTypeOption[] = [
 	{ name: "Conceptual", type: "conceptual" },
 	{ name: "Logical", type: "logic" },
 	{ name: "NoSQL", type: "nosql" },
+	{ name: "Polyglot Persistence", type: "polyglot" },
 ];
 
 const TypeOptions = styled.div`

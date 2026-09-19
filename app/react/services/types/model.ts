@@ -1,4 +1,4 @@
-export type ModelType = "conceptual" | "logic" | "nosql";
+export type ModelType = "conceptual" | "logic" | "nosql" | "polyglot";
 
 export interface Model {
 	_id: string;

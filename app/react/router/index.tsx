@@ -39,6 +39,10 @@ const router = createBrowserRouter([
 				lazy: lazy(() => import("../pages/nosql/NoSqlPageWrapper")),
 			},
 			{
+				path: "/polyglot/:modelid",
+				lazy: lazy(() => import("../pages/polyglot/PolyglotPageWrapper")),
+			},
+			{
 				path: "*",
 				element: <Navigate to="/" replace />,
 			},
