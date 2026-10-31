@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
+import React, { useRef } from "react";
 import styled from "styled-components";
+import { CSSPropertiesWithVars } from "styled-components/dist/types";
 
 const StyledOverlay = styled(RadixDialog.Overlay)`
 	position: fixed;
@@ -52,6 +53,8 @@ interface DialogProps {
 	closeOnOverlayClick?: boolean;
 	closeOnEscape?: boolean;
 	children: React.ReactNode;
+	contentStyle?: React.CSSProperties | CSSPropertiesWithVars | undefined;
+	titleStyle?: React.CSSProperties | CSSPropertiesWithVars | undefined;
 }
 
 const Dialog: React.FC<DialogProps> = ({
@@ -61,6 +64,8 @@ const Dialog: React.FC<DialogProps> = ({
 	closeOnOverlayClick = true,
 	closeOnEscape = true,
 	children,
+	contentStyle,
+	titleStyle,
 }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -82,10 +87,12 @@ const Dialog: React.FC<DialogProps> = ({
 					}}
 					aria-describedby={undefined}
 				>
-					<div className="modal-content">
+					<div className="modal-content" style={contentStyle}>
 						<RadixDialog.Title asChild>
 							<div className="modal-header">
-								<h3 className="modal-title">{title}</h3>
+								<h3 style={titleStyle} className="modal-title">
+									{title}
+								</h3>
 							</div>
 						</RadixDialog.Title>
 						{children}

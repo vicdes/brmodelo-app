@@ -125,3 +125,70 @@
 .open .toggle-visibility {
 	border-radius: 8px 8px 0 0;
 }
+
+.add-button {
+	position: relative;
+	width: 50px;
+	height: 50px;
+
+	&.open {
+		z-index: 20;
+	}
+}
+
+.polyglot-button {
+	background-color: #8752FB;
+	color: white;
+	font-size: 1.5em;
+	font-weight: 600;
+	padding: 16px;
+	border-radius: 6px;
+	position: absolute;
+	top: 20px;
+	right: 80px;
+	bottom: auto;
+	border: none;
+	z-index: 1;	
+}
+
+.add-button-menu {
+	position: absolute;
+	left: 50%;
+	bottom: 100%;
+	transform: translateX(-15%);
+	width: max-content;
+}
+
+.add-menu {
+	display: block;
+	margin: 2px;
+	color: white;
+	font-size: 1.7em;
+	padding: 16px;
+	border: none;
+	border-radius: 35px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	background-color: #009980;
+}	
+
+.add-button-plus {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: none;
+	padding: 0;
+	border-radius: 100%;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	background-color: #009980;
+}
+
+.add-button-close {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: none;
+	padding: 0;
+	border-radius: 100%;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	background-color: white;
+}

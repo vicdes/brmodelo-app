@@ -1,11 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import ConceptualPage from "../conceptual/ConceptualPage";
 import Validator from "../conceptual/validator";
 import { getModel, updateModel, saveModel } from "../../services/modelStore";
 import { usePreventExit } from "../../services/usePreventExit";
 import { useConversionModal } from "../../components/ConversionModal";
+import PolyglotPage from "./PolyglotPage";
 
 const PolyglotPageWrapper: React.FC = () => {
 	const navigate = useNavigate();
@@ -59,7 +59,7 @@ const PolyglotPageWrapper: React.FC = () => {
 	}, [conversionModal, t]);
 
 	return (
-		<ConceptualPage
+		<PolyglotPage
 			modelId={modelid}
 			onLoadModel={handleLoadModel}
 			onSaveModel={handleSaveModel}

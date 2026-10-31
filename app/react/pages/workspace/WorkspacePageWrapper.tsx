@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from "react";
+import { useSelectConceptualModelModal } from "@pages/polyglot/useSelectConceptualModel";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import WorkspacePage from "./WorkspacePage";
+import { useCreateModelModal } from "../../components/CreateModelModal";
+import { useDeleteModelModal } from "../../components/DeleteModelModal";
 import { DropdownIcon, DropdownOption } from "../../components/DropdownIcon";
 import { useFeedback } from "../../components/Feedback";
+import { useRenameModelModal } from "../../components/RenameModelModal";
 import { getAllModels } from "../../services/modelStore";
 import { Model } from "../../services/types/model";
-import { useDeleteModelModal } from "../../components/DeleteModelModal";
-import { useRenameModelModal } from "../../components/RenameModelModal";
-import { useCreateModelModal } from "../../components/CreateModelModal";
+import WorkspacePage from "./WorkspacePage";
 
 const LANGUAGE_OPTIONS: DropdownOption[] = [
 	{ name: "Português (Brasil)", type: "lang:pt-BR" },
@@ -26,6 +27,7 @@ const WorkspacePageWrapper: React.FC = () => {
 	const [models, setModels] = useState<Model[]>([]);
 	const { feedback, showFeedback, hideFeedback } = useFeedback();
 
+	const selectConceptualModelModal = useSelectConceptualModelModal(models);
 	useEffect(() => {
 		setLoading(true);
 		getAllModels()
@@ -45,36 +47,66 @@ const WorkspacePageWrapper: React.FC = () => {
 	};
 
 	const handleNewModel = () => {
-		createModelModal.open().then((result) => {
-			setModels((prev) => [...prev, result.model]);
-			showFeedback("Successfully created!", true, "success");
-			handleOpenModel(result.model);
-		}).catch((reason) => {
-			if ((reason as any)?.reason === "cancel") return;
-			showFeedback("Failed to create model. Please try again.", true, "error");
-		});
+		createModelModal
+			.open()
+			.then((result) => {
+				if (result.model.type == "polyglot") {
+					selectConceptualModelModal.open().then((selectedModel) => {
+						handleOpenModel(selectedModel);
+						setModels((prev) => [...prev, result.model]);
+					});
+				} else {
+					setModels((prev) => [...prev, result.model]);
+					showFeedback("Successfully created!", true, "success");
+					handleOpenModel(result.model);
+				}
+			})
+			.catch((reason) => {
+				if ((reason as any)?.reason === "cancel") return;
+				showFeedback(
+					"Failed to create model. Please try again.",
+					true,
+					"error",
+				);
+			});
 	};
 
 	const handleRenameModel = (model: Model) => {
-		renameModelModal.open(model._id, model.name).then((result) => {
-			setModels((prev) => prev.map((m) =>
-				m._id === result.modelId ? { ...m, name: result.newName } : m,
-			));
-			showFeedback("Successfully renamed!", true, "success");
-		}).catch((reason) => {
-			if ((reason as any)?.reason === "cancel") return;
-			showFeedback("Failed to rename model. Please try again.", true, "error");
-		});
+		renameModelModal
+			.open(model._id, model.name)
+			.then((result) => {
+				setModels((prev) =>
+					prev.map((m) =>
+						m._id === result.modelId ? { ...m, name: result.newName } : m,
+					),
+				);
+				showFeedback("Successfully renamed!", true, "success");
+			})
+			.catch((reason) => {
+				if ((reason as any)?.reason === "cancel") return;
+				showFeedback(
+					"Failed to rename model. Please try again.",
+					true,
+					"error",
+				);
+			});
 	};
 
 	const handleDeleteModel = (model: Model) => {
-		deleteModelModal.open(model._id).then((result) => {
-			setModels((prev) => prev.filter((m) => m._id !== result.modelId));
-			showFeedback("Successfully deleted!", true, "success");
-		}).catch((reason) => {
-			if ((reason as any)?.reason === "cancel") return;
-			showFeedback("Failed to delete model. Please try again.", true, "error");
-		});
+		deleteModelModal
+			.open(model._id)
+			.then((result) => {
+				setModels((prev) => prev.filter((m) => m._id !== result.modelId));
+				showFeedback("Successfully deleted!", true, "success");
+			})
+			.catch((reason) => {
+				if ((reason as any)?.reason === "cancel") return;
+				showFeedback(
+					"Failed to delete model. Please try again.",
+					true,
+					"error",
+				);
+			});
 	};
 
 	const handleMenuOptionSelected = (option: DropdownOption) => {
