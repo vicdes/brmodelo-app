@@ -242,6 +242,27 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			}
 		}, [onSaveModel, showFeedback]);
 
+		const handleElementUpdate = useCallback(
+			(elementId: string, type: "nfr" | "workload", value: string) => {
+				const editor: any = editorRef.current;
+				if (!editor) return;
+		
+				const cell = editor.graph.getCell(elementId);
+				if (!cell) return;
+		
+				cell.set(type, value);
+				editor.setDirty(true);
+		
+				const current = selectedElementRef.current;
+				if (current.element?.model?.id === elementId) {
+					const updated = { ...current, [type]: value };
+					selectedElementRef.current = updated;
+					setSelectedElement(updated);
+				}
+			},
+			[],
+		);
+
 		const handleUpdate = useCallback((event: { type: string; value?: any }) => {
 			const editor = editorRef.current;
 			const current = selectedElementRef.current;
@@ -525,9 +546,10 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 							>
 								<AddButton
 									items={[
-										{ name: "Carga de trabalho", component: WorkloadModal },
-										{ name: "Requisito não funcional", component: NfrModal },
+										{ name: t("Workload"), type: "workload", component: WorkloadModal },
+										{ name: t("Non-functional requirement"), type: "nfr", component: NfrModal },
 									]}
+									onSelect={(type, value) => handleElementUpdate(b.id, type, value)}
 								/>
 							</div>
 						))}

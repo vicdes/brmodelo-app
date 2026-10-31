@@ -1,18 +1,12 @@
 import React from "react";
-import AddMenu from "./AddMenu";
-
-export type Item = {
-	name: string;
-	component: React.ComponentType<{
-		open: boolean;
-	}>;
-};
+import AddMenu, { Item } from "./AddMenu";
 
 interface AddButtonProps {
 	items: Item[];
+	onSelect: (type: Item["type"], value: string) => void;
 }
 
-const AddButton: React.FC<AddButtonProps> = ({ items }) => {
+const AddButton: React.FC<AddButtonProps> = ({ items, onSelect }) => {
 	const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 	const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -53,7 +47,7 @@ const AddButton: React.FC<AddButtonProps> = ({ items }) => {
 			{isMenuOpen ? (
 				<>
 					<div className="add-button-menu">
-						<AddMenu items={items} />
+						<AddMenu items={items} onSelect={onSelect} />
 					</div>
 					<button
 						className="add-button-close"

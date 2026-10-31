@@ -9,45 +9,43 @@ interface Workloads {
 
 const WORKLOAD_OPTIONS: Workloads[] = [
 	{
-		name: "Muitas escritas ou atualizações",
-		description: "Os dados são inseridos ou atualizados com frequência.",
+		name: "Write-heavy or update-heavy",
+		description: "Data is inserted or updated frequently.",
 	},
 	{
-		name: "Leitura predominante",
-		description:
-			"Há muitas consultas e poucas inserções, alterações ou remoções.",
+		name: "Read-heavy",
+		description: "There are many queries and few inserts, updates, or deletions.",
 	},
 	{
-		name: "Somente leitura",
-		description: "Os dados são apenas consultados, sem alterações frequentes.",
+		name: "Read-only",
+		description: "Data is only queried, with no frequent changes.",
 	},
 	{
-		name: "Leitura dos dados mais recentes",
-		description: "As consultas acessam principalmente os registros mais novos.",
+		name: "Reading the most recent data",
+		description: "Queries mainly access the newest records.",
 	},
 	{
-		name: "Consultas por pequenos intervalos",
-		description:
-			"As consultas filtram dados por faixas curtas de tempo ou valores.",
+		name: "Small range queries",
+		description: "Queries filter data by short ranges of time or values.",
 	},
 	{
-		name: "Ler, modificar e gravar",
-		description:
-			"A aplicação lê um dado, altera seu conteúdo e grava novamente.",
+		name: "Read-modify-write",
+		description: "The application reads a record, changes its content, and writes it back.",
 	},
 ];
 export interface WorkloadModalProps {
 	open: boolean;
 	cancelable?: boolean;
-	onSuccess?: () => void;
+	onSuccess: () => void;
 	onCancel: () => void;
-	onError?: (error: unknown) => void;
+	onError: (error: unknown) => void;
 }
 
 const WorkloadModal: React.FC<WorkloadModalProps> = ({
 	open,
 	onSuccess,
 	onCancel,
+	onError,
 }) => {
 	const { t } = useTranslation(["common"]);
 	const [workloadSelected, setWorkloadSelected] = useState<Workloads>();
@@ -56,15 +54,35 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 		if (nextOpen) return;
 	};
 
+	const handleSave = async (option: Workloads | undefined) => {
+		try {
+			return option?.name;
+		} catch (error) {
+			onError(error);
+		}
+	};
+
+	const handleConfirm = () => {
+		if (!workloadSelected) return;
+		onSuccess?.(workloadSelected.name);
+	};
+
+	const isDisabled = workloadSelected === undefined;
+
 	return (
 		<Dialog
 			open={open}
 			onOpenChange={handleOpenChange}
-			title="Escolha a carga de trabalho mais adequada:"
+			title="Choose the most suitable workload:"
 			closeOnOverlayClick
 			closeOnEscape
 			contentStyle={{ backgroundColor: "white" }}
-			titleStyle={{ fontSize: "1.5em", fontWeight: "bold", marginLeft: "12px", padding: "8px" }}
+			titleStyle={{
+				fontSize: "1.5em",
+				fontWeight: "bold",
+				marginLeft: "12px",
+				padding: "8px",
+			}}
 		>
 			<div className="modal-body">
 				<form
@@ -72,6 +90,7 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 					role="form"
 					onSubmit={(event) => {
 						event.preventDefault();
+						handleSave(workloadSelected);
 					}}
 				>
 					<div className="form-group" style={{ margin: "16px" }}>
@@ -106,7 +125,7 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 					</div>
 				</form>
 			</div>
-			<div className="modal-footer" style={{ margin: "8px"}}>
+			<div className="modal-footer" style={{ margin: "8px" }}>
 				<button
 					className="br-button warning"
 					type="button"
@@ -116,7 +135,7 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 						borderRadius: "8px",
 						color: "#009980",
 						fontSize: "16px",
-						padding: "12px"
+						padding: "12px",
 					}}
 					onClick={onCancel}
 				>
@@ -124,16 +143,18 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 				</button>
 				<button
 					className="br-button"
-					type="button"
-					onClick={onSuccess}
+					type="submit"
+					onClick={handleConfirm}
 					style={{
 						backgroundColor: "#009980",
 						border: "none",
 						borderRadius: "8px",
 						color: "white",
 						fontSize: "16px",
-						padding: "12px"
+						padding: "12px",
+						opacity: isDisabled ? "0.6" : "1",
 					}}
+					disabled={isDisabled}
 				>
 					{t("Confirm")}
 				</button>

@@ -293,5 +293,22 @@
 	"Exit without saving": "Sair sem salvar",
 	"Forbidden access": "Acesso proibido",
 	"Looks like this model does not exist or you don't have access to it.": "Parece que este modelo não existe ou você não tem acesso a ele.",
-	"Back to models list": "Voltar à lista de modelos"
+	"Back to models list": "Voltar à lista de modelos",
+	"Non-functional requirement": "Requisito não funcional",
+	"Workload": "Carga de trabalho",
+	"non-functional requirement": "requisito não funcional",
+	"workload": "carga de trabalho",
+	"Write-heavy or update-heavy": "Muitas escritas ou atualizações",
+	"Data is inserted or updated frequently.": "Os dados são inseridos ou atualizados com frequência.",
+	"Read-heavy": "Leitura predominante",
+	"There are many queries and few inserts, updates, or deletions.": "Há muitas consultas e poucas inserções, alterações ou remoções.",
+	"Read-only": "Somente leitura",
+	"Data is only queried, with no frequent changes.": "Os dados são apenas consultados, sem alterações frequentes.",
+	"Reading the most recent data": "Leitura dos dados mais recentes",
+	"Queries mainly access the newest records.": "As consultas acessam principalmente os registros mais novos.",
+	"Small range queries": "Consultas por pequenos intervalos",
+	"Queries filter data by short ranges of time or values.": "As consultas filtram dados por faixas curtas de tempo ou valores.",
+	"Read-modify-write": "Ler, modificar e gravar",
+	"The application reads a record, changes its content, and writes it back.": "A aplicação lê um dado, altera seu conteúdo e grava novamente.",
+	"Choose the most suitable workload:": "Escolha a carga de trabalho mais adequada:"
 }

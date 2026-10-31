@@ -2,17 +2,21 @@ import React from "react";
 
 export type Item = {
 	name: string;
+	type: "workload" | "nfr";
 	component: React.ComponentType<{
 		open: boolean;
 		onCancel: () => void;
+		onSuccess: (value: string) => void;
+		onError: (error: unknown) => void;
 	}>;
 };
 
 interface AddMenuProps {
 	items: Item[];
+	onSelect: (type: Item["type"], value: string) => void;
 }
 
-const AddMenu: React.FC<AddMenuProps> = ({ items }) => {
+const AddMenu: React.FC<AddMenuProps> = ({ items, onSelect }) => {
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [selectedItem, setSelectedItem] = React.useState<Item | null>(null);
 
@@ -34,8 +38,15 @@ const AddMenu: React.FC<AddMenuProps> = ({ items }) => {
 					{item.name}
 				</button>
 			))}
-			{Component && (
-				<Component open={isOpen} onCancel={() => setIsOpen(false)} />
+			{Component && selectedItem && (
+				<Component
+					open={isOpen}
+					onCancel={() => setIsOpen(false)}
+					onSuccess={(value) => {
+						onSelect(selectedItem.type, value);
+						setIsOpen(false);
+					}}
+				/>
 			)}
 		</div>
 	);
