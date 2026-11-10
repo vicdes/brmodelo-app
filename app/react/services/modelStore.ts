@@ -1,4 +1,4 @@
-import { Model } from "./types/model";
+import { Model, PolyglotColor, PolyglotDatabase } from "./types/model";
 
 const KEY_PREFIX = "brmw.model.";
 
@@ -14,7 +14,10 @@ export class ModelNotFoundError extends Error {
 const keyFor = (id: string) => `${KEY_PREFIX}${id}`;
 
 const generateId = (): string => {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+	if (
+		typeof crypto !== "undefined" &&
+		typeof crypto.randomUUID === "function"
+	) {
 		return crypto.randomUUID();
 	}
 	return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -40,7 +43,11 @@ const require_ = (id: string): Model => {
 	return model;
 };
 
-export async function saveModel(input: { name: string; type: string; model: string }): Promise<Model> {
+export async function saveModel(input: {
+	name: string;
+	type: string;
+	model: string;
+}): Promise<Model> {
 	const now = new Date().toISOString();
 	const model: Model = {
 		_id: generateId(),
@@ -50,6 +57,28 @@ export async function saveModel(input: { name: string; type: string; model: stri
 		created: now,
 		updated: now,
 		version: 0,
+	};
+	write(model);
+	return model;
+}
+
+export async function savePolyglotModelingVisualize(input: {
+	id: string;
+	name: string;
+	type: string;
+	model: string;
+	polyglotDatabases: PolyglotDatabase[];
+}): Promise<Model> {
+	const now = new Date().toISOString();
+	const model: Model = {
+		_id: input.id,
+		name: input.name,
+		type: input.type,
+		model: input.model,
+		created: now,
+		updated: now,
+		version: 0,
+		polyglotDatabases: input.polyglotDatabases,
 	};
 	write(model);
 	return model;
@@ -70,7 +99,10 @@ export async function getModel(id: string): Promise<Model> {
 	return require_(id);
 }
 
-export async function updateModel(update: { id: string; model: string }): Promise<Model> {
+export async function updateModel(update: {
+	id: string;
+	model: string;
+}): Promise<Model> {
 	const current = require_(update.id);
 	const next: Model = {
 		...current,
@@ -84,7 +116,11 @@ export async function updateModel(update: { id: string; model: string }): Promis
 
 export async function renameModel(id: string, newName: string): Promise<Model> {
 	const current = require_(id);
-	const next: Model = { ...current, name: newName, updated: new Date().toISOString() };
+	const next: Model = {
+		...current,
+		name: newName,
+		updated: new Date().toISOString(),
+	};
 	write(next);
 	return next;
 }

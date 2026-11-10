@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import Dropdown from "@components/Dropdown";
+import { DropdownOption } from "@components/Dropdown/Dropdown";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
-import Dialog from "../Dialog";
+import loadingDots from "../../../img/loading-dots.gif";
 import { saveModel } from "../../services/modelStore";
 import { Model } from "../../services/types/model";
-import loadingDots from "../../../img/loading-dots.gif";
+import Dialog from "../Dialog";
 
 interface ModelTypeOption {
 	name: string;
@@ -26,7 +28,8 @@ const TypeOptions = styled.div`
 
 const TypeOption = styled.label`
 	display: flex;
-	align-items: center;
+	justify-content: center;
+	flex-direction: column;
 	gap: 8px;
 	padding: 8px 12px;
 	border: 1px solid rgba(0, 0, 0, 0.12);
@@ -56,7 +59,10 @@ export interface CreateModelModalProps {
 	onSuccess: (result: CreateModelResult) => void;
 	onCancel: () => void;
 	onError: (error: unknown) => void;
+	models: Model[];
 }
+
+const EMPTY_SELECTION = { id: "", name: "Select", type: "empty" };
 
 const CreateModelModal: React.FC<CreateModelModalProps> = ({
 	open,
@@ -64,12 +70,20 @@ const CreateModelModal: React.FC<CreateModelModalProps> = ({
 	onSuccess,
 	onCancel,
 	onError,
+	models,
 }) => {
 	const { t } = useTranslation(["common"]);
 	const [name, setName] = useState("");
-	const [typeSelected, setTypeSelected] = useState<ModelTypeOption>(TYPE_OPTIONS[0]);
+	const [typeSelected, setTypeSelected] = useState<ModelTypeOption>(
+		TYPE_OPTIONS[0],
+	);
+	const [selectedConceptual, setSelectedConceptual] = useState<Model>();
+	const [dropdownSelected, setDropdownSelected] =
+		useState<DropdownOption>(EMPTY_SELECTION);
 	const [submitted, setSubmitted] = useState(false);
 	const [loading, setLoading] = useState(false);
+
+	const isPolyglot = (option: ModelTypeOption) => option === TYPE_OPTIONS[3];
 
 	const isInvalid = name.trim() === "" && submitted;
 
@@ -79,12 +93,21 @@ const CreateModelModal: React.FC<CreateModelModalProps> = ({
 		if (trimmedName === "") return;
 		setLoading(true);
 		try {
-			const savedModel = await saveModel({
-				name: trimmedName,
-				type: typeSelected.type,
-				model: EMPTY_MODEL,
-			});
-			onSuccess({ model: savedModel });
+			if (typeSelected === TYPE_OPTIONS[3] && selectedConceptual) {
+				const savedModel = await saveModel({
+					name: trimmedName,
+					type: typeSelected.type,
+					model: selectedConceptual.model,
+				});
+				onSuccess({ model: savedModel });
+			} else {
+				const savedModel = await saveModel({
+					name: trimmedName,
+					type: typeSelected.type,
+					model: EMPTY_MODEL,
+				});
+				onSuccess({ model: savedModel });
+			}
 		} catch (error) {
 			onError(error);
 		} finally {
@@ -98,6 +121,19 @@ const CreateModelModal: React.FC<CreateModelModalProps> = ({
 		if (!cancelable) return;
 		onCancel();
 	};
+
+	const handleConceptualSelected = (selected: string) => {
+		const found = models.find((model) => model.name === selected);
+		if (found) setSelectedConceptual(found);
+	};
+
+	const conceptualOptions: DropdownOption[] = useMemo(
+		() =>
+			models
+				.filter((m) => m.type === "conceptual")
+				.map((m) => ({ name: m.name, type: m.type, id: m._id })),
+		[models],
+	);
 
 	return (
 		<Dialog
@@ -147,15 +183,33 @@ const CreateModelModal: React.FC<CreateModelModalProps> = ({
 							<TypeOptions>
 								{TYPE_OPTIONS.map((option) => (
 									<TypeOption key={option.type}>
-										<input
-											type="radio"
-											name="model-type"
-											value={option.type}
-											checked={typeSelected.type === option.type}
-											onChange={() => setTypeSelected(option)}
-											disabled={loading}
-										/>
-										<span>{t(option.name)}</span>
+										<div style={{ display: "flex", gap: "8px" }}>
+											<input
+												type="radio"
+												name="model-type"
+												value={option.type}
+												checked={typeSelected.type === option.type}
+												onChange={() => setTypeSelected(option)}
+												disabled={loading}
+											/>
+											<span>{t(option.name)}</span>
+										</div>
+										<div>
+											{isPolyglot(option) && (
+												<>
+													<label  style={{ marginTop: "8px" }}>{t("Choose a conceptual model:")}</label>
+													<Dropdown
+														options={conceptualOptions}
+														selected={dropdownSelected}
+														onSelect={(selected) => {
+															setDropdownSelected(selected);
+															handleConceptualSelected(selected.name);
+														}}
+														disabled={typeSelected.type !== "polyglot"}
+													></Dropdown>
+												</>
+											)}
+										</div>
 									</TypeOption>
 								))}
 							</TypeOptions>

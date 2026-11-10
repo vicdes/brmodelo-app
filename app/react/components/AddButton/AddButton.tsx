@@ -1,37 +1,55 @@
 import React from "react";
-import AddMenu, { Item } from "./AddMenu";
+import AddMenu, { Type } from "./AddMenu";
 
 interface AddButtonProps {
-	items: Item[];
-	onSelect: (type: Item["type"], value: string) => void;
+	onSelect: (type: Type, value: string[]) => void;
+	initialValues: [];
+	onOpenChange?: (open: boolean) => void;
+	isEditButton?: boolean;
+	selectedValue: string[];
 }
 
-const AddButton: React.FC<AddButtonProps> = ({ items, onSelect }) => {
+const AddButton: React.FC<AddButtonProps> = ({
+	onSelect,
+	initialValues,
+	onOpenChange,
+	selectedValue,
+}) => {
 	const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 	const containerRef = React.useRef<HTMLDivElement>(null);
+	const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-	// React.useEffect(() => {
-	// 	if (!isMenuOpen) return;
+	console.log("selected " + selectedValue)
 
-	// 	// const handleClickOutside = (event: Event) => {
-	// 	// 	const inside = containerRef.current?.contains(event.target as Node);
-	// 	// 	if (containerRef.current && !inside) {
-	// 	// 		setIsMenuOpen(false);
-	// 	// 	}
-	// 	// };
+	const isEditButton =
+		initialValues?.length > 0 || selectedValue?.length > 0;
 
-	// 	// const handleKeyDown = (event: KeyboardEvent) => {
-	// 	// 	if (event.key === "Escape") setIsMenuOpen(false);
-	// 	// };
+	React.useEffect(() => {
+		onOpenChange?.(isMenuOpen);
+	}, [isMenuOpen]);
 
-	// 	document.addEventListener("pointerdown", handleOutside, true);
-	// 	document.addEventListener("keydown", handleKeyDown);
+	React.useEffect(() => {
+		if (!isMenuOpen || isModalOpen) return;
 
-	// 	return () => {
-	// 		document.removeEventListener("pointerdown", handleOutside, true);
-	// 		document.removeEventListener("keydown", handleKeyDown);
-	// 	};
-	// }, [isMenuOpen]);
+		const handleOutside = (event: Event) => {
+			const inside = containerRef.current?.contains(event.target as Node);
+			if (containerRef.current && !inside) {
+				setIsMenuOpen(false);
+			}
+		};
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") setIsMenuOpen(false);
+		};
+
+		document.addEventListener("pointerdown", handleOutside, true);
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("pointerdown", handleOutside, true);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isMenuOpen, isModalOpen]);
 
 	return (
 		<div
@@ -47,7 +65,12 @@ const AddButton: React.FC<AddButtonProps> = ({ items, onSelect }) => {
 			{isMenuOpen ? (
 				<>
 					<div className="add-button-menu">
-						<AddMenu items={items} onSelect={onSelect} />
+						<AddMenu
+							onSelect={onSelect}
+							initialValues={initialValues}
+							onModalOpenChange={setIsModalOpen}
+							selectedValue={selectedValue}
+						/>
 					</div>
 					<button
 						className="add-button-close"
@@ -68,7 +91,10 @@ const AddButton: React.FC<AddButtonProps> = ({ items, onSelect }) => {
 					</button>
 				</>
 			) : (
-				<button className="add-button-plus" onClick={() => setIsMenuOpen(true)}>
+				<button
+					className={`${isEditButton ? "add-button-edit" : "add-button-plus"}`}
+					onClick={() => setIsMenuOpen(true)}
+				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="20"

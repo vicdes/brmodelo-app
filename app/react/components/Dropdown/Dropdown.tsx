@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-interface DropdownOption {
+export interface DropdownOption {
 	name: string;
 	type: string;
 }

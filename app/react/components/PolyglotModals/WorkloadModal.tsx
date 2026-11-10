@@ -14,7 +14,8 @@ const WORKLOAD_OPTIONS: Workloads[] = [
 	},
 	{
 		name: "Read-heavy",
-		description: "There are many queries and few inserts, updates, or deletions.",
+		description:
+			"There are many queries and few inserts, updates, or deletions.",
 	},
 	{
 		name: "Read-only",
@@ -30,15 +31,19 @@ const WORKLOAD_OPTIONS: Workloads[] = [
 	},
 	{
 		name: "Read-modify-write",
-		description: "The application reads a record, changes its content, and writes it back.",
+		description:
+			"The application reads a record, changes its content, and writes it back.",
 	},
 ];
 export interface WorkloadModalProps {
 	open: boolean;
 	cancelable?: boolean;
-	onSuccess: () => void;
+	onSuccess: (result: string[]) => void;
 	onCancel: () => void;
 	onError: (error: unknown) => void;
+	initialValues: string[];
+	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	selectedValue: string[];
 }
 
 const WorkloadModal: React.FC<WorkloadModalProps> = ({
@@ -46,34 +51,57 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 	onSuccess,
 	onCancel,
 	onError,
+	initialValues,
+	selectedValue
 }) => {
 	const { t } = useTranslation(["common"]);
-	const [workloadSelected, setWorkloadSelected] = useState<Workloads>();
+	const [workloadSelected, setWorkloadSelected] =
+		useState<string[]>(initialValues);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) return;
 	};
 
-	const handleSave = async (option: Workloads | undefined) => {
+	const containerRef = React.useRef<HTMLDivElement>(null);
+
+	React.useEffect(() => {
+		const handleOutside = (event: Event) => {
+			const inside = containerRef.current?.contains(event.target as Node);
+			if (containerRef.current && !inside) {
+				handleOpenChange(true);
+			}
+		};
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") handleOpenChange(true);
+		};
+
+		document.addEventListener("pointerdown", handleOutside, true);
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("pointerdown", handleOutside, true);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [containerRef.current?.onclick]);
+
+	const handleSave = async (option: string[] | undefined) => {
 		try {
-			return option?.name;
+			return option;
 		} catch (error) {
 			onError(error);
 		}
 	};
 
 	const handleConfirm = () => {
-		if (!workloadSelected) return;
-		onSuccess?.(workloadSelected.name);
+		onSuccess(workloadSelected);
 	};
-
-	const isDisabled = workloadSelected === undefined;
 
 	return (
 		<Dialog
 			open={open}
 			onOpenChange={handleOpenChange}
-			title="Choose the most suitable workload:"
+			title={t("Choose the most suitable workload:")}
 			closeOnOverlayClick
 			closeOnEscape
 			contentStyle={{ backgroundColor: "white" }}
@@ -102,8 +130,12 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 											type="radio"
 											name="model-type"
 											value={option.name}
-											checked={workloadSelected?.name === option.name}
-											onChange={() => setWorkloadSelected(option)}
+											checked={
+												selectedValue?.[0] === option.name ||
+												initialValues?.[0] === option.name ||
+												workloadSelected[0] === option.name
+											}
+											onChange={() => setWorkloadSelected([option.name])}
 											style={{ margin: "8px" }}
 										/>
 										<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
@@ -152,9 +184,7 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 						color: "white",
 						fontSize: "16px",
 						padding: "12px",
-						opacity: isDisabled ? "0.6" : "1",
 					}}
-					disabled={isDisabled}
 				>
 					{t("Confirm")}
 				</button>

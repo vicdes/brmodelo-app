@@ -1,6 +1,5 @@
 import AddButton from "@components/AddButton/AddButton";
-import NfrModal from "@components/PolyglotModals/NfrModal";
-import WorkloadModal from "@components/PolyglotModals/WorkloadModal";
+import ConceptualSidebar from "@pages/conceptual/sidebar/ConceptualSidebar";
 import React, {
 	useCallback,
 	useEffect,
@@ -15,11 +14,20 @@ import loadingDots from "../../../img/loading-dots.gif";
 import Feedback, { useFeedback } from "../../components/Feedback";
 import { ConceptualIcon } from "../../components/Icons";
 import PanelTools from "../../components/PanelTools";
-import { getAllModels } from "../../services/modelStore";
-import { Model } from "../../services/types/model";
+import {
+	getAllModels,
+	savePolyglotModelingVisualize,
+} from "../../services/modelStore";
+import {
+	Model,
+	polyglotColors,
+	PolyglotDatabase,
+	polyglotFontColor,
+} from "../../services/types/model";
 import { formatDate } from "../../utils/formatDate";
 import { IConceptualEditor } from "../conceptual/IConceptualEditor";
 import ConceptualEditor from "../conceptual/conceptualEditor";
+import { polyglotModels } from "./polyglotMocks";
 
 interface ModelInstance {
 	id: string;
@@ -35,6 +43,11 @@ interface SelectedElement {
 	nfr?: string;
 	workload?: string;
 }
+
+type DatabaseType = ["polyglot"];
+
+type PolyglotEntry = { databases: DatabaseType[] };
+type PolyglotMap = Record<string, PolyglotEntry>;
 
 interface PolyglotPageProps {
 	modelId: string;
@@ -114,7 +127,33 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			useState<SelectedElement>(BLANK_SELECTION);
 		const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 		const [buttons, setButtons] = useState<ElementButton[]>([]);
+		const [sidebarVisible, setSidebarVisible] = useState(false);
+		const [shapePaletteVisible, setShapePaletteVisible] = useState(false);
+		const [polyglotColorLegend, setPolyglotColorLegend] = useState(true);
+		const [databases, setDatabases] = useState<PolyglotDatabase[]>([]);
+		const [openButtonId, setOpenButtonId] = useState<string | null>(null);
+		const [selectedValue, setSelectedValue] = useState<{
+			elementId: string;
+			type: "nfr" | "workload";
+			value: string[];
+		}>();
+
+		const toggleShapePalette = useCallback(
+			() => setShapePaletteVisible((prev) => !prev),
+			[],
+		);
+		const toggleSidebar = useCallback(
+			() => setSidebarVisible((prev) => !prev),
+			[],
+		);
+
+		const togglePolyglotColorLegend = useCallback(
+			() => setPolyglotColorLegend((prev) => !prev),
+			[],
+		);
+		const selectedCell = selectedElement?.element?.model;
 		const buttonRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+		const polyglotRef = useRef<PolyglotMap>({});
 
 		const editorRef = useRef<IConceptualEditor | null>(null);
 		const contentRef = useRef<HTMLElement>(null);
@@ -149,21 +188,18 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 				);
 
 			interface Anchor {
-				ax: number; // 0 = esquerda, 0.5 = centro, 1 = direita
-				ay: number; // 0 = topo, 0.5 = meio, 1 = base
-				dx: number; // ajuste fino em px (positivo = direita)
-				dy: number; // ajuste fino em px (positivo = baixo)
+				ax: number;
+				ay: number;
+				dx: number;
+				dy: number;
 			}
 
 			const DEFAULT_ANCHOR: Anchor = { ax: 1, ay: 0, dx: 0, dy: 0 };
 
 			const ANCHORS: Record<string, Anchor> = {
-				// canto superior direito
 				Entity: { ax: 0.85, ay: 0, dx: 0, dy: 0 },
-				// ponta direita do losango
 				Relationship: { ax: 0.75, ay: 0.25, dx: 0, dy: 0 },
-				// um pouco para fora do círculo, para não cobri-lo
-				Attribute: { ax: 0.5, ay: 0.5, dx: 1, dy: 0 },
+				Attribute: { ax: 0.65, ay: 0.5, dx: 3, dy: 0 },
 			};
 
 			const scale = editor.paper.scale().sx;
@@ -213,12 +249,17 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 		const handleSave = useCallback(async () => {
 			const editor = editorRef.current;
 			if (!editor || !modelRef.current || isSavingRef.current) return;
+			const polyglot = Object.fromEntries(
+				Object.entries(polyglotRef.current).filter(([id]) =>
+					editor.graph.getCell(id),
+				),
+			);
 
 			setLoading(true);
 
 			const modelToSave = {
 				...modelRef.current,
-				model: JSON.stringify(editor.graph),
+				model: JSON.stringify({ ...editor.graph.toJSON(), polyglot }),
 			};
 
 			if (!editor.dirty) {
@@ -243,16 +284,16 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 		}, [onSaveModel, showFeedback]);
 
 		const handleElementUpdate = useCallback(
-			(elementId: string, type: "nfr" | "workload", value: string) => {
+			(elementId: string, type: "nfr" | "workload", value: string[]) => {
 				const editor: any = editorRef.current;
 				if (!editor) return;
-		
+
 				const cell = editor.graph.getCell(elementId);
 				if (!cell) return;
-		
+
 				cell.set(type, value);
 				editor.setDirty(true);
-		
+
 				const current = selectedElementRef.current;
 				if (current.element?.model?.id === elementId) {
 					const updated = { ...current, [type]: value };
@@ -267,18 +308,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			const editor = editorRef.current;
 			const current = selectedElementRef.current;
 			if (!editor) return;
-
-			if (event.type === "attribute.cardinality" && current.value) {
-				current.value.cardinality = event.value;
-			}
-			if (event.type === "attribute.name" && current.value) {
-				current.value.name = event.value;
-			}
-			if (event.type === "nfr" || event.type === "workload") {
-				const updated = { ...current, [event.type]: event.value };
-				selectedElementRef.current = updated;
-				setSelectedElement(updated);
-			}
 
 			editor.onUpdate(event, current);
 		}, []);
@@ -321,6 +350,62 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			}),
 			[onConvert],
 		);
+
+		const applyPolyglotColors = useCallback((dbs: PolyglotDatabase[]) => {
+			const graph = editorRef.current?.graph;
+			if (!graph) return;
+
+			const noRepeatedDbs = Array.from(
+				new Map(dbs.map((db) => [db.name, db])).values(),
+			);
+
+			setDatabases(noRepeatedDbs);
+
+			graph.startBatch("polyglot-colors");
+
+			try {
+				dbs.forEach((db) => {
+					const cell: any = graph.getCell(db.elementId);
+					cell?.setColor?.(polyglotColors[db.name]);
+					cell.attr(".outer/stroke", "none");
+					cell.attr(".outer/filter", {
+						name: "dropShadow",
+						args: { dx: 2, dy: 2, blur: 7, color: "rgba(0,0,0,0.4)" },
+					});
+					if (cell?.get("supertype") !== "Attribute") {
+						cell?.attr("text/fill", polyglotFontColor[db.name]);
+					}
+				});
+			} finally {
+				graph.stopBatch("polyglot-colors");
+			}
+		}, []);
+
+		const handleModeling = async () => {
+			const editor = editorRef.current;
+			if (!editor || !modelRef.current) return;
+
+			const elements = editor.graph.getElements();
+
+			// modificar após implementação de heurísticas
+			const dbs: PolyglotDatabase[] = polyglotModels.map((db, index) => ({
+				...db,
+				elementId: elements[index]?.id,
+			}));
+			const cols: string[] = dbs.map((db) => polyglotColors[db.name]);
+
+			if (dbs.length !== 0 && cols.length !== 0) {
+				await savePolyglotModelingVisualize({
+					id: modelRef.current.id,
+					name: modelRef.current.name,
+					type: modelRef.current.type,
+					model: JSON.stringify(editor.graph.toJSON()),
+					polyglotDatabases: dbs,
+				});
+			}
+
+			applyPolyglotColors(dbs);
+		};
 
 		useEffect(() => {
 			if (!contentRef.current) return;
@@ -391,6 +476,13 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 					setLoading(false);
 
 					editor.loadModel(jsonModel);
+
+					if (
+						modelRef.current.polyglotDatabases &&
+						modelRef.current.polyglotDatabases.length !== 0
+					) {
+						applyPolyglotColors(modelRef.current.polyglotDatabases);
+					}
 				} catch (error: any) {
 					setLoading(false);
 					if (error.status === 404) {
@@ -517,13 +609,95 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 					<PanelTools toolsController={toolsController} />
 
 					<section id="content" className="pseudo-canvas" ref={contentRef}>
-						<section className="elements-panel" id="shape-palette"></section>
-
 						<section>
-							<button className="polyglot-button">
-								Criar modelagem poliglota
+							<button className="polyglot-button" onClick={handleModeling}>
+								{t("Create polyglot modeling")}
 							</button>
 						</section>
+						<div
+							style={{
+								position: "absolute",
+								top: "19px",
+								left: "19px",
+								zIndex: 1,
+							}}
+						>
+							{databases.length > 0 && (
+								<aside
+									className={`polyglotPanel floatingPanel${polyglotColorLegend ? " open" : ""}`}
+								>
+									<button
+										className="toggle-visibility"
+										onClick={togglePolyglotColorLegend}
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="20"
+											height="20"
+											fill="none"
+										>
+											<path
+												fill="#fff"
+												fillRule="evenodd"
+												d="M4.558 14.817c.244.244.64.244.884 0L10 10.259l4.558 4.558a.625.625 0 1 0 .884-.884l-5-5a.625.625 0 0 0-.884 0l-5 5a.625.625 0 0 0 0 .884ZM3 6.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 0-1h-13a.5.5 0 0 0-.5.5Z"
+												clipRule="evenodd"
+											/>
+										</svg>
+									</button>
+									<div className="properties-content" style={{ padding: "0" }}>
+										{databases.map((database, index) => (
+											<div key={index} className="polyglot-color-item">
+												<div
+													className="color-circle"
+													style={{
+														backgroundColor: polyglotColors[database.name],
+													}}
+												/>
+												<span>{t(database.name)}</span>
+											</div>
+										))}
+									</div>
+								</aside>
+							)}
+							<section
+								className={`elements-panel floatingPanel${shapePaletteVisible ? " open" : ""}`}
+								id="shape-palette"
+								style={{
+									position: "relative",
+									width: "140px",
+								}}
+							>
+								<button
+									type="button"
+									className="toggle-visibility"
+									onClick={toggleShapePalette}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="20"
+										height="20"
+										fill="none"
+									>
+										<path
+											fill="#fff"
+											fillRule="evenodd"
+											d="M4.558 14.817c.244.244.64.244.884 0L10 10.259l4.558 4.558a.625.625 0 1 0 .884-.884l-5-5a.625.625 0 0 0-.884 0l-5 5a.625.625 0 0 0 0 .884ZM3 6.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 0-1h-13a.5.5 0 0 0-.5.5Z"
+											clipRule="evenodd"
+										/>
+									</svg>
+								</button>
+							</section>
+						</div>
+						<ConceptualSidebar
+							selectedElement={selectedElement}
+							onUpdate={handleUpdate}
+							visible={sidebarVisible}
+							onToggleVisible={toggleSidebar}
+							style={{
+								top: "80px",
+								right: "80px",
+							}}
+						/>
 					</section>
 				</section>
 				{createPortal(
@@ -542,14 +716,28 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 									width: BTN_MAX_SIZE,
 									height: BTN_MAX_SIZE,
 									willChange: "transform",
+									zIndex: openButtonId === b.id ? 1000 : 1,
 								}}
 							>
 								<AddButton
-									items={[
-										{ name: t("Workload"), type: "workload", component: WorkloadModal },
-										{ name: t("Non-functional requirement"), type: "nfr", component: NfrModal },
-									]}
-									onSelect={(type, value) => handleElementUpdate(b.id, type, value)}
+									onOpenChange={(open) =>
+										setOpenButtonId((prev) =>
+											open ? b.id : prev === b.id ? null : prev,
+										)
+									}
+									selectedValue={selectedValue ? selectedValue.value : []}
+									initialValues={
+										selectedCell?.get("workload")
+											? selectedCell?.get("workload")
+											: selectedCell?.get("nfr")
+												? selectedCell?.get("nfr")
+												: []
+									}
+									onSelect={(type, value) =>
+										openButtonId &&
+										handleElementUpdate(openButtonId, type, value) &&
+										setSelectedValue({ elementId: openButtonId, type, value})
+									}
 								/>
 							</div>
 						))}

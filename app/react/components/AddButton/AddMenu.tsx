@@ -1,53 +1,81 @@
+import { useWorkloadModal } from "@components/PolyglotModals/useWorkloadModal";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
-export type Item = {
-	name: string;
-	type: "workload" | "nfr";
-	component: React.ComponentType<{
-		open: boolean;
-		onCancel: () => void;
-		onSuccess: (value: string) => void;
-		onError: (error: unknown) => void;
-	}>;
-};
+export type Type = "workload" | "nfr";
 
 interface AddMenuProps {
-	items: Item[];
-	onSelect: (type: Item["type"], value: string) => void;
+	onSelect: (type: Type, value: string[]) => void;
+	initialValues: string[];
+	onModalOpenChange?: (open: boolean) => void;
+	selectedValue: string[]
 }
 
-const AddMenu: React.FC<AddMenuProps> = ({ items, onSelect }) => {
+const AddMenu: React.FC<AddMenuProps> = ({
+	onSelect,
+	initialValues,
+	onModalOpenChange,
+	selectedValue
+}) => {
 	const [isOpen, setIsOpen] = React.useState(false);
-	const [selectedItem, setSelectedItem] = React.useState<Item | null>(null);
+	const [selectedType, setSelectedType] = React.useState<Type | null>(null);
+	const createWorkloadModal = useWorkloadModal(initialValues, setIsOpen, selectedValue);
 
-	const Component = selectedItem ? selectedItem.component : null;
+	React.useEffect(() => {
+		onModalOpenChange?.(isOpen);
+		return () => onModalOpenChange?.(false);
+	}, [isOpen, onModalOpenChange]);
 
-	const handleOpen = (item: Item) => {
+	const { t } = useTranslation(["common"]);
+
+	const handleOpen = (item: Type) => {
 		setIsOpen(true);
-		setSelectedItem(item);
+		setSelectedType(item);
+	};
+
+	const handleOpenWorkload = () => {
+		createWorkloadModal
+			.open()
+			.then((result) => {
+				onSelect("workload", result);
+			})
+			.catch((reason) => {
+				if ((reason as any)?.reason === "cancel") return;
+			});
 	};
 
 	return (
 		<div>
-			{items.map((item, index) => (
-				<button
-					onClick={() => handleOpen(item)}
-					className="add-menu"
-					key={index}
-				>
-					{item.name}
-				</button>
-			))}
-			{Component && selectedItem && (
-				<Component
+			<button onClick={handleOpenWorkload} className="add-menu">
+				{t("Workload")}
+			</button>
+			<button onClick={() => handleOpen("nfr")} className="add-menu">
+				{t("Non-functional requirement")}
+			</button>
+			{/* {selectedType === "workload" ? (
+
+				// <WorkloadModal
+				// 	open={isOpen}
+				// 	initialValues={initialValues}
+				// 	onCancel={() => setIsOpen(false)}
+				// 	onSuccess={(value) => {
+				// 		onSelect(selectedType, value);
+				// 		setIsOpen(false);
+				// 		onSuccess()
+				// 	}}
+				// />
+			) : (
+				<NfrModal
 					open={isOpen}
+					initialValues={initialValues}
 					onCancel={() => setIsOpen(false)}
 					onSuccess={(value) => {
-						onSelect(selectedItem.type, value);
+						onSelect(selectedType, value);
 						setIsOpen(false);
+						onSuccess()
 					}}
 				/>
-			)}
+			)} */}
 		</div>
 	);
 };

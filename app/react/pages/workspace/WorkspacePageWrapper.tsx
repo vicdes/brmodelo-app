@@ -1,4 +1,3 @@
-import { useSelectConceptualModelModal } from "@pages/polyglot/useSelectConceptualModel";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -20,14 +19,14 @@ const WorkspacePageWrapper: React.FC = () => {
 	const navigate = useNavigate();
 	const deleteModelModal = useDeleteModelModal();
 	const renameModelModal = useRenameModelModal();
-	const createModelModal = useCreateModelModal();
 	const { i18n } = useTranslation(["common"]);
 
 	const [loading, setLoading] = useState(false);
 	const [models, setModels] = useState<Model[]>([]);
 	const { feedback, showFeedback, hideFeedback } = useFeedback();
 
-	const selectConceptualModelModal = useSelectConceptualModelModal(models);
+	const createModelModal = useCreateModelModal(models);
+
 	useEffect(() => {
 		setLoading(true);
 		getAllModels()
@@ -50,16 +49,9 @@ const WorkspacePageWrapper: React.FC = () => {
 		createModelModal
 			.open()
 			.then((result) => {
-				if (result.model.type == "polyglot") {
-					selectConceptualModelModal.open().then((selectedModel) => {
-						handleOpenModel(selectedModel);
-						setModels((prev) => [...prev, result.model]);
-					});
-				} else {
-					setModels((prev) => [...prev, result.model]);
-					showFeedback("Successfully created!", true, "success");
-					handleOpenModel(result.model);
-				}
+				setModels((prev) => [...prev, result.model]);
+				showFeedback("Successfully created!", true, "success");
+				handleOpenModel(result.model);
 			})
 			.catch((reason) => {
 				if ((reason as any)?.reason === "cancel") return;

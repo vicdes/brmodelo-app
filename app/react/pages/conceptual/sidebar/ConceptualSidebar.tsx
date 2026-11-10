@@ -20,6 +20,7 @@ interface ConceptualSidebarProps {
 	onUpdate: (event: { type: string; value?: any }) => void;
 	visible: boolean;
 	onToggleVisible: () => void;
+	style?: React.CSSProperties;
 }
 
 const ConceptualSidebar: React.FC<ConceptualSidebarProps> = React.memo(({
@@ -27,6 +28,7 @@ const ConceptualSidebar: React.FC<ConceptualSidebarProps> = React.memo(({
 	onUpdate,
 	visible,
 	onToggleVisible,
+	style={},
 }) => {
 	const { value, element } = selectedElement;
 
@@ -110,7 +112,7 @@ const ConceptualSidebar: React.FC<ConceptualSidebarProps> = React.memo(({
 	};
 
 	return (
-		<aside className={`panelProperties floatingPanel${visible ? " open" : ""}`}>
+		<aside className={`panelProperties floatingPanel${visible ? " open" : ""}`} style={style ?? ''}>
 			<button className="toggle-visibility" onClick={onToggleVisible}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none">
 					<path

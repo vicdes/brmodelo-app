@@ -12,7 +12,7 @@ const setText = (element, view, newText) => {
 
 const erd = {};
 
-const requirementDefaults = { nfr: "", workload: "" };
+const requirementDefaults = { nfr: [], workload: [] };
 
 erd.Entity = dia.Element.define(
 	"erd.Entity",
@@ -291,7 +291,7 @@ erd.Key = dia.Element.define(
 			width: 15,
 			height: 15,
 		},
-    ...requirementDefaults,
+		...requirementDefaults,
 		attrs: {
 			root: {
 				magnetSelector: ".outer",
