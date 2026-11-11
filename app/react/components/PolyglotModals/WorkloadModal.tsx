@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "../Dialog";
+import SuccessModal, { Type } from "./SuccessModal";
 
 interface Workloads {
 	name: string;
@@ -41,9 +42,8 @@ export interface WorkloadModalProps {
 	onSuccess: (result: string[]) => void;
 	onCancel: () => void;
 	onError: (error: unknown) => void;
-	initialValues: string[];
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	selectedValue: string[];
+	selectedValue?: string[];
 }
 
 const WorkloadModal: React.FC<WorkloadModalProps> = ({
@@ -51,12 +51,14 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 	onSuccess,
 	onCancel,
 	onError,
-	initialValues,
-	selectedValue
+	selectedValue,
+	setIsOpen,
 }) => {
 	const { t } = useTranslation(["common"]);
-	const [workloadSelected, setWorkloadSelected] =
-		useState<string[]>(initialValues);
+	const [workloadSelected, setWorkloadSelected] = useState<string[]>(
+		selectedValue ?? [],
+	);
+	const [openSuccessModal, setOpenSuccessModal] = useState(false);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) return;
@@ -85,111 +87,120 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 		};
 	}, [containerRef.current?.onclick]);
 
-	const handleSave = async (option: string[] | undefined) => {
+	const handleSave = () => {
 		try {
-			return option;
+			onSuccess(workloadSelected);
+			setOpenSuccessModal(true);
+			setIsOpen(false);
 		} catch (error) {
 			onError(error);
 		}
 	};
 
-	const handleConfirm = () => {
-		onSuccess(workloadSelected);
-	};
+	const handleChange = (option: string) => {
+		if(workloadSelected[0] !== option){
+			setWorkloadSelected([option])
+		} else {
+			setWorkloadSelected([])
+		}
+	}
 
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={handleOpenChange}
-			title={t("Choose the most suitable workload:")}
-			closeOnOverlayClick
-			closeOnEscape
-			contentStyle={{ backgroundColor: "white" }}
-			titleStyle={{
-				fontSize: "1.5em",
-				fontWeight: "bold",
-				marginLeft: "12px",
-				padding: "8px",
-			}}
-		>
-			<div className="modal-body">
-				<form
-					className="form-horizontal"
-					role="form"
-					onSubmit={(event) => {
-						event.preventDefault();
-						handleSave(workloadSelected);
-					}}
-				>
-					<div className="form-group" style={{ margin: "16px" }}>
-						<div>
-							{WORKLOAD_OPTIONS.map((option, index) => (
-								<div key={index} style={{ marginBottom: "12px" }}>
-									<div style={{ display: "flex", alignItems: "center" }}>
-										<input
-											type="radio"
-											name="model-type"
-											value={option.name}
-											checked={
-												selectedValue?.[0] === option.name ||
-												initialValues?.[0] === option.name ||
-												workloadSelected[0] === option.name
-											}
-											onChange={() => setWorkloadSelected([option.name])}
-											style={{ margin: "8px" }}
-										/>
-										<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
-											{t(option.name)}
-										</span>
-									</div>
+		<>
+			{openSuccessModal && <SuccessModal type={Type.workload} />}
+			<Dialog
+				open={open}
+				onOpenChange={handleOpenChange}
+				title={t("Choose the most suitable workload:")}
+				closeOnOverlayClick
+				closeOnEscape
+				contentStyle={{ backgroundColor: "white" }}
+				titleStyle={{
+					fontSize: "1.5em",
+					fontWeight: "bold",
+					marginLeft: "12px",
+					padding: "8px",
+				}}
+			>
+				<div className="modal-body">
+					<form
+						className="form-horizontal"
+						role="form"
+						onSubmit={(event) => {
+							event.preventDefault();
+							handleSave();
+						}}
+					>
+						<div className="form-group" style={{ margin: "16px" }}>
+							<div>
+								{WORKLOAD_OPTIONS.map((option, index) => (
 									<div
-										style={{
-											marginLeft: "30px",
-											fontSize: "1.1em",
-											fontWeight: "lighter",
-										}}
+										key={index}
+										style={{ marginBottom: "12px" }}
+										onClick={() => handleChange(option.name)}
 									>
-										<span>{t(option.description)}</span>
+										<div style={{ display: "flex", alignItems: "center" }}>
+											<input
+												type="radio"
+												name="model-type"
+												value={option.name}
+												checked={workloadSelected[0] === option.name}
+												onChange={() => handleChange(option.name)}
+												style={{ margin: "8px" }}
+											/>
+											<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
+												{t(option.name)}
+											</span>
+										</div>
+										<div
+											style={{
+												marginLeft: "30px",
+												fontSize: "1.1em",
+												fontWeight: "lighter",
+											}}
+										>
+											<span>{t(option.description)}</span>
+										</div>
 									</div>
-								</div>
-							))}
+								))}
+							</div>
 						</div>
-					</div>
-				</form>
-			</div>
-			<div className="modal-footer" style={{ margin: "8px" }}>
-				<button
-					className="br-button warning"
-					type="button"
-					style={{
-						backgroundColor: "white",
-						border: "1px solid #009980",
-						borderRadius: "8px",
-						color: "#009980",
-						fontSize: "16px",
-						padding: "12px",
-					}}
-					onClick={onCancel}
-				>
-					{t("Cancel")}
-				</button>
-				<button
-					className="br-button"
-					type="submit"
-					onClick={handleConfirm}
-					style={{
-						backgroundColor: "#009980",
-						border: "none",
-						borderRadius: "8px",
-						color: "white",
-						fontSize: "16px",
-						padding: "12px",
-					}}
-				>
-					{t("Confirm")}
-				</button>
-			</div>
-		</Dialog>
+					</form>
+				</div>
+				<div className="modal-footer" style={{ margin: "8px" }}>
+					<button
+						className="br-button warning"
+						type="button"
+						style={{
+							backgroundColor: "white",
+							border: "1px solid #009980",
+							borderRadius: "8px",
+							color: "#009980",
+							fontSize: "16px",
+							padding: "12px",
+						}}
+						onClick={onCancel}
+					>
+						{t("Cancel")}
+					</button>
+					<button
+						className="br-button"
+						type="submit"
+						onClick={handleSave}
+						style={{
+							backgroundColor: "#009980",
+							border: "none",
+							borderRadius: "8px",
+							color: "white",
+							fontSize: "16px",
+							padding: "12px",
+						}}
+					>
+						{t("Confirm")}
+					</button>
+				</div>
+			</Dialog>
+		</>
 	);
 };
 

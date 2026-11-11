@@ -1,3 +1,4 @@
+import { useNfrModal } from "@components/PolyglotModals/useNfrModal";
 import { useWorkloadModal } from "@components/PolyglotModals/useWorkloadModal";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -6,20 +7,21 @@ export type Type = "workload" | "nfr";
 
 interface AddMenuProps {
 	onSelect: (type: Type, value: string[]) => void;
-	initialValues: string[];
 	onModalOpenChange?: (open: boolean) => void;
-	selectedValue: string[]
+	selectedValue?: any;
 }
 
 const AddMenu: React.FC<AddMenuProps> = ({
 	onSelect,
-	initialValues,
 	onModalOpenChange,
-	selectedValue
+	selectedValue,
 }) => {
 	const [isOpen, setIsOpen] = React.useState(false);
-	const [selectedType, setSelectedType] = React.useState<Type | null>(null);
-	const createWorkloadModal = useWorkloadModal(initialValues, setIsOpen, selectedValue);
+	const createWorkloadModal = useWorkloadModal(
+		setIsOpen,
+		selectedValue?.get("workload"),
+	);
+	const createNfrModal = useNfrModal(setIsOpen, selectedValue?.get("nfr"));
 
 	React.useEffect(() => {
 		onModalOpenChange?.(isOpen);
@@ -27,11 +29,6 @@ const AddMenu: React.FC<AddMenuProps> = ({
 	}, [isOpen, onModalOpenChange]);
 
 	const { t } = useTranslation(["common"]);
-
-	const handleOpen = (item: Type) => {
-		setIsOpen(true);
-		setSelectedType(item);
-	};
 
 	const handleOpenWorkload = () => {
 		createWorkloadModal
@@ -44,39 +41,28 @@ const AddMenu: React.FC<AddMenuProps> = ({
 			});
 	};
 
-	return (
-		<div>
-			<button onClick={handleOpenWorkload} className="add-menu">
-				{t("Workload")}
-			</button>
-			<button onClick={() => handleOpen("nfr")} className="add-menu">
-				{t("Non-functional requirement")}
-			</button>
-			{/* {selectedType === "workload" ? (
+	const handleOpenNfr = () => {
+		createNfrModal
+			.open()
+			.then((result) => {
+				onSelect("nfr", result);
+			})
+			.catch((reason) => {
+				if ((reason as any)?.reason === "cancel") return;
+			});
+	};
 
-				// <WorkloadModal
-				// 	open={isOpen}
-				// 	initialValues={initialValues}
-				// 	onCancel={() => setIsOpen(false)}
-				// 	onSuccess={(value) => {
-				// 		onSelect(selectedType, value);
-				// 		setIsOpen(false);
-				// 		onSuccess()
-				// 	}}
-				// />
-			) : (
-				<NfrModal
-					open={isOpen}
-					initialValues={initialValues}
-					onCancel={() => setIsOpen(false)}
-					onSuccess={(value) => {
-						onSelect(selectedType, value);
-						setIsOpen(false);
-						onSuccess()
-					}}
-				/>
-			)} */}
-		</div>
+	return (
+		<>
+			<div className="add-button-menu">
+				<button onClick={handleOpenWorkload} className="add-menu-item">
+					{t("Workload")}
+				</button>
+				<button onClick={handleOpenNfr} className="add-menu-item">
+					{t("Non-functional requirement")}
+				</button>
+			</div>
+		</>
 	);
 };
 

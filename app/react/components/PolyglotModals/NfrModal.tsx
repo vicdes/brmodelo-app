@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "../Dialog";
+import SuccessModal, { Type } from "./SuccessModal";
 
 interface NonFunctionalRequirement {
 	name: string;
@@ -47,10 +48,11 @@ const NFR_OPTIONS: NonFunctionalRequirement[] = [
 export interface NfrModalProps {
 	open: boolean;
 	cancelable?: boolean;
-	onSuccess?: () => void;
+	onSuccess: (result: string[]) => void;
 	onCancel: () => void;
 	onError: (error: unknown) => void;
-	initialValues: string[];
+	selectedValue?: string[];
+	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const NfrModal: React.FC<NfrModalProps> = ({
@@ -59,134 +61,153 @@ const NfrModal: React.FC<NfrModalProps> = ({
 	onSuccess,
 	onCancel,
 	onError,
-	initialValues,
+	selectedValue,
+	setIsOpen,
 }) => {
 	const { t } = useTranslation(["common"]);
-	const [nfrsSelected, setNfrsSelected] = useState<NonFunctionalRequirement[]>(
-		[],
+	const [nfrsSelected, setNfrsSelected] = useState<string[]>(
+		Array.isArray(selectedValue) ? selectedValue : [],
 	);
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { value, checked } = e.target;
-		const option = NFR_OPTIONS.find(({ name }) => name === value);
-		return checked
-			? setNfrsSelected((prev) => [...prev, option!])
-			: setNfrsSelected((prev) => prev.filter(({ name }) => name !== value));
-	};
+	const [openSuccessModal, setOpenSuccessModal] = useState(false);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) return;
 	};
 
-	const handleSave = async (
-		options: NonFunctionalRequirement[] | undefined,
-	) => {
+	const containerRef = React.useRef<HTMLDivElement>(null);
+
+	React.useEffect(() => {
+		const handleOutside = (event: Event) => {
+			const inside = containerRef.current?.contains(event.target as Node);
+			if (containerRef.current && !inside) {
+				handleOpenChange(true);
+			}
+		};
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") handleOpenChange(true);
+		};
+
+		document.addEventListener("pointerdown", handleOutside, true);
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("pointerdown", handleOutside, true);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [containerRef.current?.onclick]);
+
+	const handleSave = () => {
 		try {
-			return options;
+			onSuccess(nfrsSelected);
+			setOpenSuccessModal(true);
 		} catch (error) {
 			onError(error);
 		}
 	};
 
-	const handleConfirm = () => {
-		//onSuccess?.(nfrsSelected);
-		console.log(
-			"Selected NFRs:",
-			nfrsSelected.map((nfr) => nfr.name),
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { value, checked } = e.target;
+		setNfrsSelected((prev) =>
+			checked ? [...prev, value] : prev.filter((item) => item !== value),
 		);
 	};
 
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={handleOpenChange}
-			title={t("Choose the most suitable workload:")}
-			closeOnOverlayClick
-			closeOnEscape
-			contentStyle={{ backgroundColor: "white" }}
-			titleStyle={{
-				fontSize: "1.4em",
-				fontWeight: "bold",
-				marginLeft: "12px",
-				padding: "8px",
-			}}
-		>
-			<div className="modal-body" style={{ padding: "6px" }}>
-				<form
-					className="form-horizontal"
-					role="form"
-					onSubmit={(event) => {
-						event.preventDefault();
-						handleSave(nfrsSelected);
-					}}
-				>
-					<div className="form-group" style={{ margin: "16px" }}>
-						<div>
-							{NFR_OPTIONS.map((option, index) => (
-								<div key={index} style={{ marginBottom: "12px" }}>
-									<div style={{ display: "flex", alignItems: "center" }}>
-										<input
-											type="checkbox"
-											name="model-type"
-											value={option.name}
-											checked={nfrsSelected.some(
-												(nfr) => nfr.name === option.name,
-											)}
-											onChange={handleChange}
-											style={{ margin: "8px" }}
-										/>
-										<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
-											{t(option.name)}
-										</span>
+		<>
+			{openSuccessModal && <SuccessModal type={Type.nfr} />}
+			<Dialog
+				open={open}
+				onOpenChange={handleOpenChange}
+				title={t("Choose the most suitable workload:")}
+				closeOnOverlayClick
+				closeOnEscape
+				contentStyle={{ backgroundColor: "white" }}
+				titleStyle={{
+					fontSize: "1.4em",
+					fontWeight: "bold",
+					marginLeft: "12px",
+					padding: "8px",
+				}}
+			>
+				<div className="modal-body" style={{ padding: "6px" }}>
+					<form
+						className="form-horizontal"
+						role="form"
+						onSubmit={(event) => {
+							event.preventDefault();
+							handleSave();
+						}}
+					>
+						<div className="form-group" style={{ margin: "16px" }}>
+							<div>
+								{NFR_OPTIONS.map((option, index) => (
+									<div key={index} style={{ marginBottom: "12px" }}>
+										<div style={{ display: "flex", alignItems: "center" }}>
+											<input
+												type="checkbox"
+												name="model-type"
+												value={option.name}
+												checked={nfrsSelected?.some(
+													(nfr) => nfr === option.name,
+												)}
+												onChange={handleChange}
+												style={{ margin: "8px" }}
+											/>
+											<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
+												{t(option.name)}
+											</span>
+										</div>
+										<div
+											style={{
+												marginLeft: "30px",
+												fontSize: "1.1em",
+												fontWeight: "lighter",
+											}}
+										>
+											<span>{t(option.description)}</span>
+										</div>
 									</div>
-									<div
-										style={{
-											marginLeft: "30px",
-											fontSize: "1.1em",
-											fontWeight: "lighter",
-										}}
-									>
-										<span>{t(option.description)}</span>
-									</div>
-								</div>
-							))}
+								))}
+							</div>
 						</div>
-					</div>
-				</form>
-			</div>
-			<div className="modal-footer" style={{ paddingTop: "8px" }}>
-				<button
-					className="br-button warning"
-					type="button"
-					style={{
-						backgroundColor: "white",
-						border: "1px solid #009980",
-						borderRadius: "8px",
-						color: "#009980",
-						fontSize: "16px",
-						padding: "12px",
-					}}
-					onClick={onCancel}
-				>
-					{t("Cancel")}
-				</button>
-				<button
-					className="br-button"
-					type="submit"
-					onClick={handleConfirm}
-					style={{
-						backgroundColor: "#009980",
-						border: "none",
-						borderRadius: "8px",
-						color: "white",
-						fontSize: "16px",
-						padding: "12px",
-					}}
-				>
-					{t("Confirm")}
-				</button>
-			</div>
-		</Dialog>
+					</form>
+				</div>
+				<div className="modal-footer" style={{ paddingTop: "8px" }}>
+					<button
+						className="br-button warning"
+						type="button"
+						style={{
+							backgroundColor: "white",
+							border: "1px solid #009980",
+							borderRadius: "8px",
+							color: "#009980",
+							fontSize: "16px",
+							padding: "12px",
+						}}
+						onClick={onCancel}
+					>
+						{t("Cancel")}
+					</button>
+					<button
+						className="br-button"
+						type="submit"
+						onClick={handleSave}
+						style={{
+							backgroundColor: "#009980",
+							border: "none",
+							borderRadius: "8px",
+							color: "white",
+							fontSize: "16px",
+							padding: "12px",
+						}}
+					>
+						{t("Confirm")}
+					</button>
+				</div>
+			</Dialog>
+		</>
 	);
 };
 

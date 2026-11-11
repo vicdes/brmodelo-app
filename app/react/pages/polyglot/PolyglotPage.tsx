@@ -8,7 +8,6 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import loadingDots from "../../../img/loading-dots.gif";
 import Feedback, { useFeedback } from "../../components/Feedback";
@@ -132,12 +131,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 		const [polyglotColorLegend, setPolyglotColorLegend] = useState(true);
 		const [databases, setDatabases] = useState<PolyglotDatabase[]>([]);
 		const [openButtonId, setOpenButtonId] = useState<string | null>(null);
-		const [selectedValue, setSelectedValue] = useState<{
-			elementId: string;
-			type: "nfr" | "workload";
-			value: string[];
-		}>();
-
 		const toggleShapePalette = useCallback(
 			() => setShapePaletteVisible((prev) => !prev),
 			[],
@@ -151,10 +144,8 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			() => setPolyglotColorLegend((prev) => !prev),
 			[],
 		);
-		const selectedCell = selectedElement?.element?.model;
 		const buttonRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 		const polyglotRef = useRef<PolyglotMap>({});
-
 		const editorRef = useRef<IConceptualEditor | null>(null);
 		const contentRef = useRef<HTMLElement>(null);
 		const modelRef = useRef<any>(null);
@@ -170,6 +161,26 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			x: number;
 			y: number;
 		}
+
+		
+
+		const orderedButtons = useMemo(
+			() =>
+				openButtonId
+					? [
+							...buttons.filter((b) => b.id !== openButtonId),
+							...buttons.filter((b) => b.id === openButtonId),
+						]
+					: buttons,
+			[buttons, openButtonId],
+		);
+		
+
+		const handleGetCell = useCallback((id: string) => {
+			const editor: any = editorRef.current;
+			const cell = editor.graph.getCell(id);
+			return cell;
+		}, []);
 
 		const updateButtons = useCallback(() => {
 			const editor: any = editorRef.current;
@@ -244,7 +255,7 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 
 		useLayoutEffect(() => {
 			updateButtons();
-		}, [buttons, updateButtons]);
+		}, [buttons, openButtonId, updateButtons]);
 
 		const handleSave = useCallback(async () => {
 			const editor = editorRef.current;
@@ -290,7 +301,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 
 				const cell = editor.graph.getCell(elementId);
 				if (!cell) return;
-
 				cell.set(type, value);
 				editor.setDirty(true);
 
@@ -416,8 +426,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 						value: element.value,
 						type: element.type,
 						element: element.element,
-						nfr: element.nfr ?? "",
-						workload: element.workload ?? "",
 					});
 					selectedElementRef.current = enriched;
 					setSelectedElement(enriched);
@@ -695,55 +703,42 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 							onToggleVisible={toggleSidebar}
 							style={{
 								top: "80px",
-								right: "80px",
+								right: "20px",
 							}}
 						/>
 					</section>
 				</section>
-				{createPortal(
-					<>
-						{buttons.map((b) => (
-							<div
-								key={b.id}
-								ref={(node) => {
-									if (node) buttonRefs.current.set(b.id, node);
-									else buttonRefs.current.delete(b.id);
-								}}
-								style={{
-									position: "fixed",
-									left: 0,
-									top: 0,
-									width: BTN_MAX_SIZE,
-									height: BTN_MAX_SIZE,
-									willChange: "transform",
-									zIndex: openButtonId === b.id ? 1000 : 1,
-								}}
-							>
-								<AddButton
-									onOpenChange={(open) =>
-										setOpenButtonId((prev) =>
-											open ? b.id : prev === b.id ? null : prev,
-										)
-									}
-									selectedValue={selectedValue ? selectedValue.value : []}
-									initialValues={
-										selectedCell?.get("workload")
-											? selectedCell?.get("workload")
-											: selectedCell?.get("nfr")
-												? selectedCell?.get("nfr")
-												: []
-									}
-									onSelect={(type, value) =>
-										openButtonId &&
-										handleElementUpdate(openButtonId, type, value) &&
-										setSelectedValue({ elementId: openButtonId, type, value})
-									}
-								/>
-							</div>
-						))}
-					</>,
-					document.body,
-				)}
+				<>
+					{orderedButtons.map((b) => (
+						<div
+							key={b.id}
+							ref={(node) => {
+								if (node) buttonRefs.current.set(b.id, node);
+								else buttonRefs.current.delete(b.id);
+							}}
+							style={{
+								position: "fixed",
+								left: 0,
+								top: 0,
+								width: BTN_MAX_SIZE,
+								height: BTN_MAX_SIZE,
+							}}
+						>
+							<AddButton
+								onOpenChange={(open) =>
+									setOpenButtonId((prev) =>
+										open ? b.id : prev === b.id ? null : prev,
+									)
+								}
+								isEdit={handleGetCell(b.id).get("workload").length > 0 || handleGetCell(b.id).get("nfr").length > 0 }
+								selectedValue={handleGetCell(b.id)}
+								onSelect={(type, value) =>
+									openButtonId && handleElementUpdate(openButtonId, type, value)
+								}
+							/>
+						</div>
+					))}
+				</>
 			</div>
 		);
 	},

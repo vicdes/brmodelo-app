@@ -1,28 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import AddMenu, { Type } from "./AddMenu";
 
 interface AddButtonProps {
 	onSelect: (type: Type, value: string[]) => void;
-	initialValues: [];
-	onOpenChange?: (open: boolean) => void;
-	isEditButton?: boolean;
-	selectedValue: string[];
+	onOpenChange: (open: boolean) => void;
+	selectedValue?: any;
+	isEdit: boolean
 }
 
 const AddButton: React.FC<AddButtonProps> = ({
 	onSelect,
-	initialValues,
 	onOpenChange,
 	selectedValue,
+	isEdit
 }) => {
 	const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 	const containerRef = React.useRef<HTMLDivElement>(null);
 	const [isModalOpen, setIsModalOpen] = React.useState(false);
-
-	console.log("selected " + selectedValue)
-
-	const isEditButton =
-		initialValues?.length > 0 || selectedValue?.length > 0;
 
 	React.useEffect(() => {
 		onOpenChange?.(isMenuOpen);
@@ -54,24 +48,18 @@ const AddButton: React.FC<AddButtonProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className={`add-button${isMenuOpen ? " open" : ""}`}
 			style={{
-				position: "relative",
 				width: "100%",
 				height: "100%",
-				zIndex: isMenuOpen ? 30 : 10,
 			}}
 		>
 			{isMenuOpen ? (
 				<>
-					<div className="add-button-menu">
-						<AddMenu
-							onSelect={onSelect}
-							initialValues={initialValues}
-							onModalOpenChange={setIsModalOpen}
-							selectedValue={selectedValue}
-						/>
-					</div>
+					<AddMenu
+						onSelect={onSelect}
+						onModalOpenChange={setIsModalOpen}
+						selectedValue={selectedValue}
+					/>
 					<button
 						className="add-button-close"
 						onClick={() => setIsMenuOpen(false)}
@@ -91,23 +79,25 @@ const AddButton: React.FC<AddButtonProps> = ({
 					</button>
 				</>
 			) : (
-				<button
-					className={`${isEditButton ? "add-button-edit" : "add-button-plus"}`}
-					onClick={() => setIsMenuOpen(true)}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 20 15"
-						fill="none"
+				<>
+					<button
+						className={`${isEdit ? "add-button-edit" : "add-button-plus"}`}
+						onClick={() => setIsMenuOpen(true)}
 					>
-						<path
-							fill="white"
-							d="M10.8 4.8a.8.8 0 0 0-1.6 0v4.4H4.8a.8.8 0 0 0 0 1.6h4.4v4.4a.8.8 0 0 0 1.6 0v-4.4h4.4a.8.8 0 0 0 0-1.6h-4.4V4.8Z"
-						/>
-					</svg>
-				</button>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 20 15"
+							fill="none"
+						>
+							<path
+								fill="white"
+								d="M10.8 4.8a.8.8 0 0 0-1.6 0v4.4H4.8a.8.8 0 0 0 0 1.6h4.4v4.4a.8.8 0 0 0 1.6 0v-4.4h4.4a.8.8 0 0 0 0-1.6h-4.4V4.8Z"
+							/>
+						</svg>
+					</button>
+				</>
 			)}
 		</div>
 	);

@@ -7,9 +7,8 @@ interface WorkloadModalOptions {
 }
 
 export function useWorkloadModal(
-	initialValues: string[],
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>,
-    selectedValue: string[]
+    selectedValue?: string[]
 ) {
 	const context = useContext(ModalsContext);
 	if (!context) {
@@ -20,7 +19,6 @@ export function useWorkloadModal(
 			context.open<string[]>(({ onSuccess, onCancel, onError }) => (
 				<WorkloadModal
 					setIsOpen={setIsOpen}
-					initialValues={initialValues}
 					open
 					cancelable={options.cancelable ?? true}
 					onSuccess={onSuccess}

@@ -343,5 +343,7 @@
 	"Graphs + Columnar": "Grafos + Colunar",
 	"Document + Key‑value": "Documentos + Chave‑valor",
 	"Document + Columnar": "Documentos + Colunar",
-	"Key‑value + Columnar": "Chave‑valor + Colunar"
+	"Key‑value + Columnar": "Chave‑valor + Colunar",
+	"Workload added successfully!": "Carga de trabalho adicionada com sucesso!",
+	"Non-functional Requirement added successfully!": "Requisito não funcional adicionado com sucesso!"
 }
