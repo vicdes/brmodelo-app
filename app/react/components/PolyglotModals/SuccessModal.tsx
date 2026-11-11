@@ -8,19 +8,20 @@ export enum Type {
 }
 
 interface SuccessModalProps {
-	type: Type
+	type: Type;
+	open: boolean;
+	onClose: () => void;
 }
 
-const SuccessModal: React.FC<SuccessModalProps> = ({ type }) => {
+const SuccessModal: React.FC<SuccessModalProps> = ({ type, open, onClose }) => {
 	const { t } = useTranslation(["common"]);
 
-	const handleOpenChange = (nextOpen: boolean) => {
-		if (nextOpen) return;
-	};
 	return (
 		<Dialog
-			open={true}
-			onOpenChange={handleOpenChange}
+			open={open}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) onClose();
+			}}
 			title={
 				type === Type.workload
 					? t("Workload added successfully!")
@@ -36,21 +37,23 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ type }) => {
 				padding: "8px",
 			}}
 		>
-			<button
-				className="br-button"
-				type="submit"
-				onClick={() => handleOpenChange}
-				style={{
-					backgroundColor: "#009980",
-					border: "none",
-					borderRadius: "8px",
-					color: "white",
-					fontSize: "16px",
-					padding: "12px",
-				}}
-			>
-				{t("Confirm")}
-			</button>
+			<div className="modal-footer">
+				<button
+					className="br-button"
+					type="button"
+					onClick={onClose}
+					style={{
+						backgroundColor: "#009980",
+						border: "none",
+						borderRadius: "8px",
+						color: "white",
+						fontSize: "16px",
+						padding: "12px",
+					}}
+				>
+					{t("Confirm")}
+				</button>
+			</div>
 		</Dialog>
 	);
 };

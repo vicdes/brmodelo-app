@@ -1,22 +1,25 @@
-import React, { useState } from "react";
-import AddMenu, { Type } from "./AddMenu";
+import SuccessModal, { Type } from "@components/PolyglotModals/SuccessModal";
+import React from "react";
+import AddMenu from "./AddMenu";
 
 interface AddButtonProps {
 	onSelect: (type: Type, value: string[]) => void;
 	onOpenChange: (open: boolean) => void;
 	selectedValue?: any;
-	isEdit: boolean
+	isEdit: boolean;
 }
 
 const AddButton: React.FC<AddButtonProps> = ({
 	onSelect,
 	onOpenChange,
 	selectedValue,
-	isEdit
+	isEdit,
 }) => {
 	const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 	const containerRef = React.useRef<HTMLDivElement>(null);
 	const [isModalOpen, setIsModalOpen] = React.useState(false);
+	const [successModalOpen, setSuccessModalOpen] = React.useState(false);
+	const [successType, setSuccessType] = React.useState<Type>(Type.workload);
 
 	React.useEffect(() => {
 		onOpenChange?.(isMenuOpen);
@@ -45,6 +48,11 @@ const AddButton: React.FC<AddButtonProps> = ({
 		};
 	}, [isMenuOpen, isModalOpen]);
 
+	const handleSuccess = (type: Type) => {
+		setSuccessType(type === "workload" ? Type.workload : Type.nfr);
+		setSuccessModalOpen(true);
+	};
+
 	return (
 		<div
 			ref={containerRef}
@@ -53,12 +61,18 @@ const AddButton: React.FC<AddButtonProps> = ({
 				height: "100%",
 			}}
 		>
+			<SuccessModal
+				type={successType}
+				open={successModalOpen}
+				onClose={() => setSuccessModalOpen(false)}
+			/>
 			{isMenuOpen ? (
 				<>
 					<AddMenu
 						onSelect={onSelect}
 						onModalOpenChange={setIsModalOpen}
 						selectedValue={selectedValue}
+						openModalSuccess={handleSuccess}
 					/>
 					<button
 						className="add-button-close"

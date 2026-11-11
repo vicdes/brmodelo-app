@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "../Dialog";
-import SuccessModal, { Type } from "./SuccessModal";
 
 interface Workloads {
 	name: string;
@@ -42,7 +41,7 @@ export interface WorkloadModalProps {
 	onSuccess: (result: string[]) => void;
 	onCancel: () => void;
 	onError: (error: unknown) => void;
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 	selectedValue?: string[];
 }
 
@@ -52,13 +51,11 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 	onCancel,
 	onError,
 	selectedValue,
-	setIsOpen,
 }) => {
 	const { t } = useTranslation(["common"]);
 	const [workloadSelected, setWorkloadSelected] = useState<string[]>(
 		selectedValue ?? [],
 	);
-	const [openSuccessModal, setOpenSuccessModal] = useState(false);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) return;
@@ -90,24 +87,20 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 	const handleSave = () => {
 		try {
 			onSuccess(workloadSelected);
-			setOpenSuccessModal(true);
-			setIsOpen(false);
 		} catch (error) {
+			console.error(error);
 			onError(error);
 		}
 	};
-
 	const handleChange = (option: string) => {
-		if(workloadSelected[0] !== option){
-			setWorkloadSelected([option])
+		if (workloadSelected[0] !== option) {
+			setWorkloadSelected([option]);
 		} else {
-			setWorkloadSelected([])
+			setWorkloadSelected([]);
 		}
-	}
-
+	};
 	return (
 		<>
-			{openSuccessModal && <SuccessModal type={Type.workload} />}
 			<Dialog
 				open={open}
 				onOpenChange={handleOpenChange}
@@ -123,49 +116,40 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 				}}
 			>
 				<div className="modal-body">
-					<form
-						className="form-horizontal"
-						role="form"
-						onSubmit={(event) => {
-							event.preventDefault();
-							handleSave();
-						}}
-					>
-						<div className="form-group" style={{ margin: "16px" }}>
-							<div>
-								{WORKLOAD_OPTIONS.map((option, index) => (
-									<div
-										key={index}
-										style={{ marginBottom: "12px" }}
-										onClick={() => handleChange(option.name)}
-									>
-										<div style={{ display: "flex", alignItems: "center" }}>
-											<input
-												type="radio"
-												name="model-type"
-												value={option.name}
-												checked={workloadSelected[0] === option.name}
-												onChange={() => handleChange(option.name)}
-												style={{ margin: "8px" }}
-											/>
-											<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
-												{t(option.name)}
-											</span>
-										</div>
-										<div
-											style={{
-												marginLeft: "30px",
-												fontSize: "1.1em",
-												fontWeight: "lighter",
-											}}
-										>
-											<span>{t(option.description)}</span>
-										</div>
+					<div className="form-group" style={{ margin: "16px" }}>
+						<div>
+							{WORKLOAD_OPTIONS.map((option, index) => (
+								<div
+									key={index}
+									style={{ marginBottom: "12px" }}
+									onClick={() => handleChange(option.name)}
+								>
+									<div style={{ display: "flex", alignItems: "center" }}>
+										<input
+											type="radio"
+											name="model-type"
+											value={option.name}
+											checked={workloadSelected[0] === option.name}
+											onChange={() => handleChange(option.name)}
+											style={{ margin: "8px" }}
+										/>
+										<span style={{ fontWeight: "bold", fontSize: "1.3em" }}>
+											{t(option.name)}
+										</span>
 									</div>
-								))}
-							</div>
+									<div
+										style={{
+											marginLeft: "30px",
+											fontSize: "1.1em",
+											fontWeight: "lighter",
+										}}
+									>
+										<span>{t(option.description)}</span>
+									</div>
+								</div>
+							))}
 						</div>
-					</form>
+					</div>
 				</div>
 				<div className="modal-footer" style={{ margin: "8px" }}>
 					<button
@@ -185,7 +169,6 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 					</button>
 					<button
 						className="br-button"
-						type="submit"
 						onClick={handleSave}
 						style={{
 							backgroundColor: "#009980",

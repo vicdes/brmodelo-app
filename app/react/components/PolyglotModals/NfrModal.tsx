@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "../Dialog";
-import SuccessModal, { Type } from "./SuccessModal";
 
 interface NonFunctionalRequirement {
 	name: string;
@@ -47,29 +46,23 @@ const NFR_OPTIONS: NonFunctionalRequirement[] = [
 
 export interface NfrModalProps {
 	open: boolean;
-	cancelable?: boolean;
 	onSuccess: (result: string[]) => void;
 	onCancel: () => void;
 	onError: (error: unknown) => void;
 	selectedValue?: string[];
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const NfrModal: React.FC<NfrModalProps> = ({
 	open,
-	cancelable = true,
 	onSuccess,
 	onCancel,
 	onError,
 	selectedValue,
-	setIsOpen,
 }) => {
 	const { t } = useTranslation(["common"]);
 	const [nfrsSelected, setNfrsSelected] = useState<string[]>(
 		Array.isArray(selectedValue) ? selectedValue : [],
 	);
-
-	const [openSuccessModal, setOpenSuccessModal] = useState(false);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen) return;
@@ -101,7 +94,6 @@ const NfrModal: React.FC<NfrModalProps> = ({
 	const handleSave = () => {
 		try {
 			onSuccess(nfrsSelected);
-			setOpenSuccessModal(true);
 		} catch (error) {
 			onError(error);
 		}
@@ -116,7 +108,6 @@ const NfrModal: React.FC<NfrModalProps> = ({
 
 	return (
 		<>
-			{openSuccessModal && <SuccessModal type={Type.nfr} />}
 			<Dialog
 				open={open}
 				onOpenChange={handleOpenChange}
