@@ -99,6 +99,15 @@ const NfrModal: React.FC<NfrModalProps> = ({
 		}
 	};
 
+	const isChecked = (option: string) => nfrsSelected?.some((nfr) => nfr === option,) as boolean
+
+
+	const handleClick = (option: string) => {		
+		setNfrsSelected((prev) =>
+			!isChecked(option) ? [...prev, option] : prev.filter((item) => item !== option),
+		);
+	}
+
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { value, checked } = e.target;
 		setNfrsSelected((prev) =>
@@ -111,7 +120,7 @@ const NfrModal: React.FC<NfrModalProps> = ({
 			<Dialog
 				open={open}
 				onOpenChange={handleOpenChange}
-				title={t("Choose the most suitable workload:")}
+				title={t("Choose the most suitable non-functional requirements")}
 				closeOnOverlayClick
 				closeOnEscape
 				contentStyle={{ backgroundColor: "white" }}
@@ -119,7 +128,6 @@ const NfrModal: React.FC<NfrModalProps> = ({
 					fontSize: "1.4em",
 					fontWeight: "bold",
 					marginLeft: "12px",
-					padding: "8px",
 				}}
 			>
 				<div className="modal-body" style={{ padding: "6px" }}>
@@ -134,15 +142,13 @@ const NfrModal: React.FC<NfrModalProps> = ({
 						<div className="form-group" style={{ margin: "16px" }}>
 							<div>
 								{NFR_OPTIONS.map((option, index) => (
-									<div key={index} style={{ marginBottom: "12px" }}>
+									<div key={index} style={{ marginBottom: "12px", cursor: "pointer" }} onClick={() => handleClick(option.name)}>
 										<div style={{ display: "flex", alignItems: "center" }}>
 											<input
 												type="checkbox"
 												name="model-type"
 												value={option.name}
-												checked={nfrsSelected?.some(
-													(nfr) => nfr === option.name,
-												)}
+												checked={isChecked(option.name)}
 												onChange={handleChange}
 												style={{ margin: "8px" }}
 											/>
@@ -167,32 +173,16 @@ const NfrModal: React.FC<NfrModalProps> = ({
 				</div>
 				<div className="modal-footer" style={{ paddingTop: "8px" }}>
 					<button
-						className="br-button warning"
+						className="polyglot-style-secondary-button "
 						type="button"
-						style={{
-							backgroundColor: "white",
-							border: "1px solid #009980",
-							borderRadius: "8px",
-							color: "#009980",
-							fontSize: "16px",
-							padding: "12px",
-						}}
 						onClick={onCancel}
 					>
 						{t("Cancel")}
 					</button>
 					<button
-						className="br-button"
+						className="polyglot-style-primary-button "
 						type="submit"
 						onClick={handleSave}
-						style={{
-							backgroundColor: "#009980",
-							border: "none",
-							borderRadius: "8px",
-							color: "white",
-							fontSize: "16px",
-							padding: "12px",
-						}}
 					>
 						{t("Confirm")}
 					</button>

@@ -1,4 +1,4 @@
-import { Model, PolyglotColor, PolyglotDatabase } from "./types/model";
+import { Model, PolyglotDatabase } from "./types/model";
 
 const KEY_PREFIX = "brmw.model.";
 

@@ -73,9 +73,10 @@ const AddButton: React.FC<AddButtonProps> = ({
 						onModalOpenChange={setIsModalOpen}
 						selectedValue={selectedValue}
 						openModalSuccess={handleSuccess}
+						isEdit={isEdit}
 					/>
 					<button
-						className="add-button-close"
+						className={`${isEdit ? "edit-button-close" : "add-button-close"}`}
 						onClick={() => setIsMenuOpen(false)}
 					>
 						<svg
@@ -86,7 +87,7 @@ const AddButton: React.FC<AddButtonProps> = ({
 							fill="none"
 						>
 							<path
-								fill="#009980"
+								fill={`${isEdit ? "#0088ff" : "#009980"}`}
 								d="M5.05 5.05a.8.8 0 0 0-1.13 1.13L8.87 11.13l-4.95 4.95a.8.8 0 1 0 1.13 1.13L10 12.26l4.95 4.95a.8.8 0 1 0 1.13-1.13l-4.95-4.95 4.95-4.95a.8.8 0 0 0-1.13-1.13L10 10l-4.95-4.95Z"
 							/>
 						</svg>
@@ -95,7 +96,7 @@ const AddButton: React.FC<AddButtonProps> = ({
 			) : (
 				<>
 					<button
-						className={`${isEdit ? "add-button-edit" : "add-button-plus"}`}
+						className={`${isEdit ? "edit-button-plus" : "add-button-plus"}`}
 						onClick={() => setIsMenuOpen(true)}
 					>
 						<svg

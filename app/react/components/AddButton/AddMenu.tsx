@@ -7,8 +7,9 @@ import { useTranslation } from "react-i18next";
 interface AddMenuProps {
 	onSelect: (type: Type, value: string[]) => void;
 	onModalOpenChange?: (open: boolean) => void;
-	selectedValue?: any
+	selectedValue?: any;
 	openModalSuccess: (type: Type) => void;
+	isEdit: boolean;
 }
 
 const AddMenu: React.FC<AddMenuProps> = ({
@@ -16,6 +17,7 @@ const AddMenu: React.FC<AddMenuProps> = ({
 	onModalOpenChange,
 	selectedValue,
 	openModalSuccess,
+	isEdit,
 }) => {
 	const [isOpen, setIsOpen] = React.useState(false);
 
@@ -33,10 +35,7 @@ const AddMenu: React.FC<AddMenuProps> = ({
 	const { t } = useTranslation(["common"]);
 
 	const hasChanged = (previous: string[] = [], current: string[] = []) => {
-		return (
-			[...previous].sort().join("|") !==
-			[...current].sort().join("|")
-		);
+		return [...previous].sort().join("|") !== [...current].sort().join("|");
 	};
 
 	const handleOpenWorkload = () => {
@@ -56,9 +55,9 @@ const AddMenu: React.FC<AddMenuProps> = ({
 	const handleOpenNfr = () => {
 		createNfrModal
 			.open()
-			.then((result) => {				
-				const previous = selectedValue?.get(Type.nfr) ?? [];	
-				if (!hasChanged(previous, result)) return;				
+			.then((result) => {
+				const previous = selectedValue?.get(Type.nfr) ?? [];
+				if (!hasChanged(previous, result)) return;
 				openModalSuccess(Type.nfr);
 				onSelect(Type.nfr, result);
 			})
@@ -70,10 +69,16 @@ const AddMenu: React.FC<AddMenuProps> = ({
 	return (
 		<>
 			<div className="add-button-menu">
-				<button onClick={handleOpenWorkload} className="add-menu-item">
+				<button
+					onClick={handleOpenWorkload}
+					className={`${isEdit ? "edit-button-menu-item" : "add-menu-item"}`}
+				>
 					{t("Workload")}
 				</button>
-				<button onClick={handleOpenNfr} className="add-menu-item">
+				<button
+					onClick={handleOpenNfr}
+					className={`${isEdit ? "edit-button-menu-item" : "add-menu-item"}`}
+				>
 					{t("Non-functional requirement")}
 				</button>
 			</div>

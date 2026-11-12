@@ -1,4 +1,5 @@
 import AddButton from "@components/AddButton/AddButton";
+import ConfirmPolyglotModeling from "@components/PolyglotModals/ConfirmPolyglotModeling";
 import ConceptualSidebar from "@pages/conceptual/sidebar/ConceptualSidebar";
 import React, {
 	useCallback,
@@ -13,12 +14,8 @@ import loadingDots from "../../../img/loading-dots.gif";
 import Feedback, { useFeedback } from "../../components/Feedback";
 import { ConceptualIcon } from "../../components/Icons";
 import PanelTools from "../../components/PanelTools";
+import { savePolyglotModelingVisualize } from "../../services/modelStore";
 import {
-	getAllModels,
-	savePolyglotModelingVisualize,
-} from "../../services/modelStore";
-import {
-	Model,
 	polyglotColors,
 	PolyglotDatabase,
 	polyglotFontColor,
@@ -114,7 +111,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 	}) => {
 		const { t } = useTranslation(["common"]);
 		const [loading, setLoading] = useState(true);
-		const [models, setModels] = useState<Model[]>([]);
 		const [model, setModel] = useState<ModelInstance>({
 			id: "",
 			name: "",
@@ -131,6 +127,7 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 		const [polyglotColorLegend, setPolyglotColorLegend] = useState(true);
 		const [databases, setDatabases] = useState<PolyglotDatabase[]>([]);
 		const [openButtonId, setOpenButtonId] = useState<string | null>(null);
+		const [confirmModalOpen, setConfirmModalOpen] = React.useState(false);
 		const toggleShapePalette = useCallback(
 			() => setShapePaletteVisible((prev) => !prev),
 			[],
@@ -162,8 +159,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			y: number;
 		}
 
-		
-
 		const orderedButtons = useMemo(
 			() =>
 				openButtonId
@@ -174,7 +169,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 					: buttons,
 			[buttons, openButtonId],
 		);
-		
 
 		const handleGetCell = useCallback((id: string) => {
 			const editor: any = editorRef.current;
@@ -296,7 +290,7 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 
 		const handleElementUpdate = useCallback(
 			(elementId: string, type: "nfr" | "workload", value: string[]) => {
-				const editor: any = editorRef.current;
+				const editor: IConceptualEditor | null = editorRef.current;
 				if (!editor) return;
 
 				const cell = editor.graph.getCell(elementId);
@@ -451,7 +445,7 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			editorRef.current = editor;
 			onEditorReady?.(editor);
 
-			const anyEditor: any = editor;
+			const anyEditor: IConceptualEditor | null = editor;
 			anyEditor.graph.on("add remove reset", updateButtons);
 			anyEditor.paper.on("translate scale resize render:done", updateButtons);
 			window.addEventListener("scroll", updateButtons, true);
@@ -491,9 +485,9 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 					) {
 						applyPolyglotColors(modelRef.current.polyglotDatabases);
 					}
-				} catch (error: any) {
+				} catch (error) {
 					setLoading(false);
-					if (error.status === 404) {
+					if (error === "404") {
 						onNavigateToWorkspace();
 					} else {
 						console.error(error);
@@ -534,24 +528,6 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			onEditorReady,
 			handleSave,
 		]);
-
-		useEffect(() => {
-			setLoading(true);
-			getAllModels()
-				.then((data) => {
-					setModels(data);
-					setLoading(false);
-				})
-				.catch((error: unknown) => {
-					console.error("Failed to load models:", error);
-					setLoading(false);
-					showFeedback(
-						"Failed to load models. Please try again.",
-						true,
-						"error",
-					);
-				});
-		}, [showFeedback]);
 
 		return (
 			<div>
@@ -615,12 +591,16 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 					/>
 
 					<PanelTools toolsController={toolsController} />
-
 					<section id="content" className="pseudo-canvas" ref={contentRef}>
 						<section>
-							<button className="polyglot-button" onClick={handleModeling}>
+							<button className="polyglot-button" onClick={() => setConfirmModalOpen(true)}>
 								{t("Create polyglot modeling")}
 							</button>
+							<ConfirmPolyglotModeling
+								open={confirmModalOpen}
+								onClose={() => setConfirmModalOpen(false)}
+								onConfirm={handleModeling}
+							/>
 						</section>
 						<div
 							style={{
@@ -730,7 +710,10 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 										open ? b.id : prev === b.id ? null : prev,
 									)
 								}
-								isEdit={handleGetCell(b.id).get("workload").length > 0 || handleGetCell(b.id).get("nfr").length > 0 }
+								isEdit={
+									handleGetCell(b.id).get("workload").length > 0 ||
+									handleGetCell(b.id).get("nfr").length > 0
+								}
 								selectedValue={handleGetCell(b.id)}
 								onSelect={(type, value) =>
 									openButtonId && handleElementUpdate(openButtonId, type, value)

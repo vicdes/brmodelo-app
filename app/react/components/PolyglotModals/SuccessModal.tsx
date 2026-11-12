@@ -37,7 +37,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ type, open, onClose }) => {
 				padding: "8px",
 			}}
 		>
-			<div className="modal-footer">
+			<div className="modal-success-footer">
 				<button
 					className="br-button"
 					type="button"
@@ -51,7 +51,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ type, open, onClose }) => {
 						padding: "12px",
 					}}
 				>
-					{t("Confirm")}
+					{t("Close")}
 				</button>
 			</div>
 		</Dialog>

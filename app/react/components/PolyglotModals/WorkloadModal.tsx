@@ -112,7 +112,6 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 					fontSize: "1.5em",
 					fontWeight: "bold",
 					marginLeft: "12px",
-					padding: "8px",
 				}}
 			>
 				<div className="modal-body">
@@ -121,7 +120,7 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 							{WORKLOAD_OPTIONS.map((option, index) => (
 								<div
 									key={index}
-									style={{ marginBottom: "12px" }}
+									style={{ marginBottom: "12px", cursor: "pointer" }}
 									onClick={() => handleChange(option.name)}
 								>
 									<div style={{ display: "flex", alignItems: "center" }}>
@@ -153,31 +152,16 @@ const WorkloadModal: React.FC<WorkloadModalProps> = ({
 				</div>
 				<div className="modal-footer" style={{ margin: "8px" }}>
 					<button
-						className="br-button warning"
+						className="polyglot-style-secondary-button "
 						type="button"
-						style={{
-							backgroundColor: "white",
-							border: "1px solid #009980",
-							borderRadius: "8px",
-							color: "#009980",
-							fontSize: "16px",
-							padding: "12px",
-						}}
 						onClick={onCancel}
 					>
 						{t("Cancel")}
 					</button>
 					<button
-						className="br-button"
+						className="polyglot-style-primary-button "
+						type="submit"
 						onClick={handleSave}
-						style={{
-							backgroundColor: "#009980",
-							border: "none",
-							borderRadius: "8px",
-							color: "white",
-							fontSize: "16px",
-							padding: "12px",
-						}}
 					>
 						{t("Confirm")}
 					</button>

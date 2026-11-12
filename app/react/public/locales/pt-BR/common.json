@@ -311,6 +311,7 @@
 	"Read-modify-write": "Ler, modificar e gravar",
 	"The application reads a record, changes its content, and writes it back.": "A aplicação lê um dado, altera seu conteúdo e grava novamente.",
 	"Choose the most suitable workload:": "Escolha a carga de trabalho mais adequada:",
+	"Choose the most suitable non-functional requirements": "Escolha os requisitos não funcionais mais adequados:",
 	"Choose a conceptual model:": "Selecione um modelo conceitual:",
 	"Create polyglot modeling": "Criar modelagem poliglota",
 	"Strong consistency": "Alta consistência",
@@ -345,5 +346,6 @@
 	"Document + Columnar": "Documentos + Colunar",
 	"Key‑value + Columnar": "Chave‑valor + Colunar",
 	"Workload added successfully!": "Carga de trabalho adicionada com sucesso!",
-	"Non-functional Requirement added successfully!": "Requisito não funcional adicionado com sucesso!"
+	"Non-functional Requirement added successfully!": "Requisito não funcional adicionado com sucesso!",
+	"Are you sure that you want to proceed with the polyglot modeling?": "Você tem certeza que deseja prosseguir com a modelagem poliglota?"
 }
