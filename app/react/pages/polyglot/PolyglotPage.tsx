@@ -389,6 +389,8 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			const editor = editorRef.current;
 			if (!editor || !modelRef.current) return;
 
+			setLoading(true);
+			
 			const elements = editor.graph.getElements();
 
 			// modificar após implementação de heurísticas
@@ -409,6 +411,8 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			}
 
 			applyPolyglotColors(dbs);
+
+			setLoading(false);
 		};
 
 		useEffect(() => {
@@ -593,7 +597,10 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 					<PanelTools toolsController={toolsController} />
 					<section id="content" className="pseudo-canvas" ref={contentRef}>
 						<section>
-							<button className="polyglot-button" onClick={() => setConfirmModalOpen(true)}>
+							<button
+								className="polyglot-button"
+								onClick={() => setConfirmModalOpen(true)}
+							>
 								{t("Create polyglot modeling")}
 							</button>
 							<ConfirmPolyglotModeling
