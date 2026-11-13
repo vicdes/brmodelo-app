@@ -127,7 +127,13 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 		const [polyglotColorLegend, setPolyglotColorLegend] = useState(true);
 		const [databases, setDatabases] = useState<PolyglotDatabase[]>([]);
 		const [openButtonId, setOpenButtonId] = useState<string | null>(null);
-		const [confirmModalOpen, setConfirmModalOpen] = React.useState(false);
+		const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+		const [currentHoverElement, setCurrentHoverElement] = useState<
+			string | null
+		>(null);
+		const [hoveredLegend, setHoveredLegend] = useState<string[]>([]);
+		const [allDatabases, setAllDatabases] = useState<PolyglotDatabase[]>();
+
 		const toggleShapePalette = useCallback(
 			() => setShapePaletteVisible((prev) => !prev),
 			[],
@@ -148,10 +154,13 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 		const modelRef = useRef<any>(null);
 		const selectedElementRef = useRef<SelectedElement>(BLANK_SELECTION);
 		const isSavingRef = useRef(false);
+		const tooltipRef = useRef<HTMLDivElement>(null);
+		const hoverIdRef = useRef<string | null>(null);
 
 		const BTN_MAX_SIZE = 35;
 		const MAX_SCALE = 2;
 		const MIN_BTN_SIZE = 20;
+
 		interface ElementButton {
 			id: string;
 			type: string;
@@ -170,11 +179,45 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			[buttons, openButtonId],
 		);
 
-		const handleGetCell = useCallback((id: string) => {
-			const editor: any = editorRef.current;
-			const cell = editor.graph.getCell(id);
-			return cell;
+		const handleGetCell = useCallback((id: string | null) => {
+			const editor = editorRef.current;
+			if (!editor || !id) return null;
+			return editor.graph.getCell(id) ?? null;
 		}, []);
+
+		const handleHighlightElement = (database: PolyglotDatabase) => {
+			if (!allDatabases) return;
+			const ids = allDatabases
+				.filter((db) => db.name === database.name)
+				.map((db) => String(db.elementId));
+			setHoveredLegend(ids);
+		};
+
+		const updateTooltip = useCallback(() => {
+			const editor: any = editorRef.current;
+			const node = tooltipRef.current;
+			const id = hoverIdRef.current;
+			if (!editor?.paper || !node || !id) return;
+
+			const cell = editor.graph.getCell(id);
+			if (!cell) return;
+
+			const bbox = cell.getBBox();
+			const p = editor.paper.localToClientPoint(
+				bbox.x + bbox.width / 2,
+				bbox.y,
+			);
+
+			node.style.transform = `translate(${p.x}px, ${p.y - 8}px) translate(-50%, -100%)`;
+		}, []);
+
+		useLayoutEffect(() => {
+			updateTooltip();
+		}, [currentHoverElement, updateTooltip]);
+
+		useLayoutEffect(() => {
+			updateTooltip();
+		}, [currentHoverElement, updateTooltip]);
 
 		const updateButtons = useCallback(() => {
 			const editor: any = editorRef.current;
@@ -359,10 +402,11 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			const graph = editorRef.current?.graph;
 			if (!graph) return;
 
+			setAllDatabases(dbs);
+			
 			const noRepeatedDbs = Array.from(
 				new Map(dbs.map((db) => [db.name, db])).values(),
 			);
-
 			setDatabases(noRepeatedDbs);
 
 			graph.startBatch("polyglot-colors");
@@ -390,7 +434,7 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			if (!editor || !modelRef.current) return;
 
 			setLoading(true);
-			
+
 			const elements = editor.graph.getElements();
 
 			// modificar após implementação de heurísticas
@@ -414,6 +458,23 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 
 			setLoading(false);
 		};
+
+		useEffect(() => {
+			const editor: any = editorRef.current;
+			if (!editor?.graph || !editor?.paper) return;
+
+			const ids = new Set(hoveredLegend);
+
+			editor.graph.getElements().forEach((el: any) => {
+				const view = editor.paper.findViewByModel(el);
+				if (!view) return;
+
+				const highlighted = ids.has(String(el.id));
+				view.el.style.filter = highlighted
+					? "drop-shadow(0 0 6px rgb(0, 153, 128))"
+					: "";
+			});
+		}, [hoveredLegend]);
 
 		useEffect(() => {
 			if (!contentRef.current) return;
@@ -449,10 +510,31 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			editorRef.current = editor;
 			onEditorReady?.(editor);
 
+			const handleElementEnter = (elementView: any) => {
+				const cell = elementView.model;
+				hoverIdRef.current = String(cell.id);
+				setCurrentHoverElement(String(cell.id));
+			};
+
+			const handleElementLeave = () => {
+				hoverIdRef.current = null;
+				setCurrentHoverElement(null);
+			};
+
+			const GRAPH_EVENTS = "add remove reset change:position change:size";
 			const anyEditor: IConceptualEditor | null = editor;
 			anyEditor.graph.on("add remove reset", updateButtons);
+
 			anyEditor.paper.on("translate scale resize render:done", updateButtons);
+			anyEditor.graph.on(GRAPH_EVENTS, updateTooltip);
+			anyEditor.paper.on("element:mouseenter", handleElementEnter);
+			anyEditor.paper.on("element:mouseleave", handleElementLeave);
+			anyEditor.paper.on("translate scale resize render:done", updateTooltip);
+			window.addEventListener("scroll", updateTooltip, true);
+			window.addEventListener("resize", updateTooltip);
+
 			window.addEventListener("scroll", updateButtons, true);
+
 			window.addEventListener("resize", updateButtons);
 
 			const loadModel = async () => {
@@ -517,6 +599,15 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 				);
 				window.removeEventListener("scroll", updateButtons, true);
 				window.removeEventListener("resize", updateButtons);
+				anyEditor.graph.off(GRAPH_EVENTS, updateTooltip);
+				anyEditor.paper.off("element:mouseenter", handleElementEnter);
+				anyEditor.paper.off("element:mouseleave", handleElementLeave);
+				anyEditor.paper.off(
+					"translate scale resize render:done",
+					updateTooltip,
+				);
+				window.removeEventListener("scroll", updateTooltip, true);
+				window.removeEventListener("resize", updateTooltip);
 
 				onEditorReady?.(null);
 				if (editorRef.current) {
@@ -532,6 +623,10 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 			onEditorReady,
 			handleSave,
 		]);
+
+		const elementDatabase =
+			allDatabases &&
+			allDatabases.find((db) => String(db.elementId) === currentHoverElement);
 
 		return (
 			<div>
@@ -641,7 +736,12 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 									</button>
 									<div className="properties-content" style={{ padding: "0" }}>
 										{databases.map((database, index) => (
-											<div key={index} className="polyglot-color-item">
+											<div
+												key={index}
+												className="polyglot-color-item"
+												onMouseEnter={() => handleHighlightElement(database)}
+												onMouseLeave={() => setHoveredLegend([])}
+											>
 												<div
 													className="color-circle"
 													style={{
@@ -697,37 +797,66 @@ const PolyglotPage: React.FC<PolyglotPageProps> = React.memo(
 				</section>
 				<>
 					{orderedButtons.map((b) => (
+						<>
+							<div
+								key={b.id}
+								ref={(node) => {
+									if (node) buttonRefs.current.set(b.id, node);
+									else buttonRefs.current.delete(b.id);
+								}}
+								style={{
+									position: "fixed",
+									left: 0,
+									top: 0,
+									width: BTN_MAX_SIZE,
+									height: BTN_MAX_SIZE,
+								}}
+							>
+								<AddButton
+									onOpenChange={(open) =>
+										setOpenButtonId((prev) =>
+											open ? b.id : prev === b.id ? null : prev,
+										)
+									}
+									isEdit={
+										handleGetCell(b.id).get("workload").length > 0 ||
+										handleGetCell(b.id).get("nfr").length > 0
+									}
+									selectedValue={handleGetCell(b.id)}
+									onSelect={(type, value) =>
+										openButtonId &&
+										handleElementUpdate(openButtonId, type, value)
+									}
+								/>
+							</div>
+						</>
+					))}
+
+					{currentHoverElement && elementDatabase && (
 						<div
-							key={b.id}
-							ref={(node) => {
-								if (node) buttonRefs.current.set(b.id, node);
-								else buttonRefs.current.delete(b.id);
-							}}
+							ref={tooltipRef}
 							style={{
 								position: "fixed",
 								left: 0,
 								top: 0,
-								width: BTN_MAX_SIZE,
-								height: BTN_MAX_SIZE,
+								zIndex: 9999,
+								pointerEvents: "none",
 							}}
 						>
-							<AddButton
-								onOpenChange={(open) =>
-									setOpenButtonId((prev) =>
-										open ? b.id : prev === b.id ? null : prev,
-									)
-								}
-								isEdit={
-									handleGetCell(b.id).get("workload").length > 0 ||
-									handleGetCell(b.id).get("nfr").length > 0
-								}
-								selectedValue={handleGetCell(b.id)}
-								onSelect={(type, value) =>
-									openButtonId && handleElementUpdate(openButtonId, type, value)
-								}
-							/>
+							<div
+								style={{
+									background: "white",
+									color: "black",
+									padding: "4px 8px",
+									borderRadius: 4,
+									filter: "drop-shadow(gray 2px 2px 4px)",
+									whiteSpace: "nowrap",
+								}}
+							>
+								{t(elementDatabase.name)}
+							</div>
 						</div>
-					))}
+					)}
 				</>
 			</div>
 		);

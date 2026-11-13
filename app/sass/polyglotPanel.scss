@@ -25,3 +25,20 @@
 	color: var(--hover-color);
 	overflow-wrap: break-word;
 }
+
+
+[role="tooltip"] {
+    visibility: hidden;
+    position: fixed;
+    background: black;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+[aria-describedby]:hover + [role="tooltip"],
+[aria-describedby]:focus + [role="tooltip"] {
+    visibility: visible;
+}
